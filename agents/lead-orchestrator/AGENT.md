@@ -83,7 +83,7 @@ stateDiagram-v2
   "assigned_agent": "fullstack-engineer",
   "objective": "Implement JWT authentication middleware with RS256 signing and Redis token revocation list.",
   "context_artifacts": [
-    "p:/AIML Projects/Skills and Agents/skills/backend-architecture/SKILL.md"
+    "~/.gemini/config/skills/backend-architecture/SKILL.md"
   ],
   "acceptance_criteria": [
     "Passes unit tests with >=90% line coverage",
