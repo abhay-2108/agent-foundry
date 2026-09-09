@@ -156,7 +156,8 @@ def generate_local_embedding(text: str, dimensions: int = 128) -> List[float]:
 
 class PersistentAgentMemory:
     """Manages Tier 2 (Episodic SQLite Log) and Tier 3 (Semantic Vector Store)."""
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: Optional[str] = None, max_episodes: int = 2000):
+        self.max_episodes = max_episodes
         if db_path is None:
             default_dir = Path(__file__).resolve().parent.parent / ".memory"
             default_dir.mkdir(parents=True, exist_ok=True)
@@ -174,6 +175,8 @@ class PersistentAgentMemory:
 
     def _init_db(self) -> None:
         with self._get_conn() as conn:
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
             # Tier 2: Episodic Execution Ledger
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS episodic_log (
@@ -191,6 +194,7 @@ class PersistentAgentMemory:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_ep_session ON episodic_log (session_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_ep_agent ON episodic_log (agent_name);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_ep_time ON episodic_log (timestamp);")
 
             # Tier 3: Semantic Long-Term Facts
             conn.execute("""
@@ -241,7 +245,32 @@ class PersistentAgentMemory:
                     tokens_used
                 )
             )
+            # Automatic Ring-Buffer: Keep only the most recent self.max_episodes
+            conn.execute(
+                """
+                DELETE FROM episodic_log WHERE id NOT IN (
+                    SELECT id FROM episodic_log ORDER BY id DESC LIMIT ?
+                )
+                """,
+                (self.max_episodes,)
+            )
             return cur.lastrowid
+
+    def prune_stale_episodes(self, max_days: int = 30) -> Dict[str, Any]:
+        """Prunes episodes older than max_days and runs VACUUM to free disk space."""
+        cutoff = time.time() - (max_days * 86400)
+        with self._get_conn() as conn:
+            cur = conn.execute("DELETE FROM episodic_log WHERE timestamp < ?", (cutoff,))
+            pruned = cur.rowcount
+            conn.commit()
+            conn.execute("VACUUM;")
+            total_remaining = conn.execute("SELECT COUNT(*) FROM episodic_log").fetchone()[0]
+            db_size_bytes = os.path.getsize(self.db_path) if os.path.exists(self.db_path) else 0
+            return {
+                "pruned_episodes": pruned,
+                "remaining_episodes": total_remaining,
+                "db_size_kb": round(db_size_bytes / 1024, 2)
+            }
 
     def get_recent_episodes(self, session_id: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         with self._get_conn() as conn:
@@ -330,13 +359,18 @@ class AgentMemoryEngine:
     def recall_facts(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         return self.persistent.query_facts(query, top_k=top_k)
 
+    def prune(self, max_days: int = 30) -> Dict[str, Any]:
+        return self.persistent.prune_stale_episodes(max_days=max_days)
+
     def get_full_status(self) -> Dict[str, Any]:
+        db_size = os.path.getsize(self.persistent.db_path) if os.path.exists(self.persistent.db_path) else 0
         return {
             "session_id": self.session_id,
             "working_tokens": self.working.total_tokens,
             "working_turns_count": len(self.working.turns),
             "recent_episodes": len(self.persistent.get_recent_episodes(self.session_id, 100)),
-            "db_path": self.persistent.db_path
+            "db_path": self.persistent.db_path,
+            "db_size_kb": round(db_size / 1024, 2)
         }
 
 

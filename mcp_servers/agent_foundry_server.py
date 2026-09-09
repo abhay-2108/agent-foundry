@@ -269,6 +269,18 @@ def memory_get_recent_episodes(limit: int = 10, session_id: str = "") -> str:
 
 
 @mcp.tool()
+def memory_prune(max_days: int = 30) -> str:
+    """
+    Prunes execution episodes older than max_days and runs SQLite VACUUM to reclaim disk space.
+    """
+    try:
+        res = memory_engine.prune(max_days=max_days)
+        return json.dumps({"status": "SUCCESS", "result": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "ERROR", "error": str(e)})
+
+
+@mcp.tool()
 def memory_add_working_note(note: str) -> str:
     """
     Appends an operational note or scratchpad milestone into Tier 1 Working Memory.
