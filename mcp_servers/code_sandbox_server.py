@@ -49,6 +49,7 @@ def execute_python_code(code: str, timeout_seconds: int = 10) -> Dict[str, Any]:
     try:
         proc = subprocess.run(
             [sys.executable, temp_path],
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
@@ -89,6 +90,7 @@ def run_shell_command(command: str, cwd: Optional[str] = None, timeout_seconds: 
             command,
             shell=True,
             cwd=work_dir,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
