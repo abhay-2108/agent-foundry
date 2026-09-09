@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "self-healing-code-pipeline",
+  "name": "Self-Healing Bug Diagnosis & Patch Pipeline",
+  "description": "Autonomous defect remediation pipeline: isolates runtime crashes into standalone failing tests, generates targeted patches, and mathematically proves defect elimination (RED -> GREEN).",
+  "steps": [
+    {
+      "step_id": "step_1_isolate_repro",
+      "agent": "code-quality-auditor",
+      "action": "ISOLATE_MINIMAL_REPRO_TEST",
+      "depends_on": [],
+      "inputs": {
+        "error_traceback": "IndexError: list index out of range in tokenizer.py:42"
+      },
+      "acceptance_criteria": [
+        "Produces standalone repro test file in tests/repros/",
+        "Proves failure with non-zero exit code (RED state)"
+      ]
+    },
+    {
+      "step_id": "step_2_generate_patch",
+      "agent": "fullstack-engineer",
+      "action": "IMPLEMENT_TARGETED_PATCH",
+      "depends_on": ["step_1_isolate_repro"],
+      "inputs": {
+        "failing_test_path": "{{steps.step_1_isolate_repro.output}}"
+      },
+      "acceptance_criteria": [
+        "Modifies only necessary lines without collateral changes",
+        "Preserves existing test suite compatibility"
+      ]
+    },
+    {
+      "step_id": "step_3_verify_green",
+      "agent": "code-quality-auditor",
+      "action": "ASSERT_TEST_PASSING",
+      "depends_on": ["step_2_generate_patch"],
+      "inputs": {
+        "patch_result": "{{steps.step_2_generate_patch.output}}"
+      },
+      "acceptance_criteria": [
+        "Repro test flips from RED to GREEN with exit code 0",
+        "Zero regressions introduced across existing test suite"
+      ]
+    },
+    {
+      "step_id": "step_4_document_incident",
+      "agent": "technical-writer-scribe",
+      "action": "RECORD_POST_MORTEM",
+      "depends_on": ["step_3_verify_green"],
+      "inputs": {
+        "diagnosis_data": "{{steps.step_3_verify_green.output}}"
+      },
+      "acceptance_criteria": [
+        "Records Root Cause Analysis (RCA) in docs/postmortems/",
+        "Documents preventive verification rule"
+      ]
+    }
+  ]
+}

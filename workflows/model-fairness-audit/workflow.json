@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "model-fairness-audit-flow",
+  "name": "ML Pipeline Training, SHAP & Demographic Fairness Audit",
+  "description": "Rigorous machine learning workflow: leakage-safe feature engineering, model training, SHAP value computation, and demographic subgroup parity auditing with automated mitigation triggers.",
+  "steps": [
+    {
+      "step_id": "step_1_eda_and_split",
+      "agent": "data-scientist",
+      "action": "LEAKAGE_SAFE_SPLIT_AND_EDA",
+      "depends_on": [],
+      "inputs": {
+        "dataset_path": "data/credit_risk.parquet",
+        "target": "defaulted"
+      },
+      "acceptance_criteria": [
+        "Splits train/test prior to fitting any scalers or encoders",
+        "Profiles missingness mechanisms (MCAR/MAR/MNAR)"
+      ]
+    },
+    {
+      "step_id": "step_2_train_pipeline",
+      "agent": "data-scientist",
+      "action": "FIT_LEAKAGE_SAFE_PIPELINE",
+      "depends_on": ["step_1_eda_and_split"],
+      "inputs": {
+        "data_splits": "{{steps.step_1_eda_and_split.output}}"
+      },
+      "acceptance_criteria": [
+        "Packages all transformations into scikit-learn Pipeline",
+        "Evaluates AUC-ROC gap to prevent overfitting"
+      ]
+    },
+    {
+      "step_id": "step_3_shap_explainability",
+      "agent": "data-scientist",
+      "action": "COMPUTE_SHAP_VALUES",
+      "depends_on": ["step_2_train_pipeline"],
+      "inputs": {
+        "pipeline": "{{steps.step_2_train_pipeline.output}}",
+        "background_sample_method": "shap.kmeans"
+      },
+      "acceptance_criteria": [
+        "Computes TreeSHAP feature attribution scores",
+        "Summarizes background reference set to 100 centroids"
+      ]
+    },
+    {
+      "step_id": "step_4_fairness_audit",
+      "agent": "data-scientist",
+      "action": "AUDIT_DEMOGRAPHIC_SUBGROUPS",
+      "depends_on": ["step_3_shap_explainability"],
+      "inputs": {
+        "shap_values": "{{steps.step_3_shap_explainability.output}}",
+        "sensitive_attribute": "gender",
+        "fairness_metric": "Equalized Odds"
+      },
+      "acceptance_criteria": [
+        "Calculates False Positive and False Negative Rate disparities",
+        "Asserts Disparate Impact Ratio >= 0.80 (four-fifths rule)"
+      ]
+    },
+    {
+      "step_id": "step_5_publish_model_card",
+      "agent": "technical-writer-scribe",
+      "action": "GENERATE_MODEL_CARD_REPORT",
+      "depends_on": ["step_4_fairness_audit"],
+      "inputs": {
+        "fairness_results": "{{steps.step_4_fairness_audit.output}}"
+      },
+      "acceptance_criteria": [
+        "Outputs standardized Model Card markdown report",
+        "Visualizes beeswarm feature impact and subgroup metrics"
+      ]
+    }
+  ]
+}

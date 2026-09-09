@@ -1,0 +1,135 @@
+---
+name: llm-evals-engineer
+description: >-
+  Use this skill when designing, building, or executing automated evaluation (evals) suites
+  for LLMs, RAG systems, and AI agents. Implements LLM-as-a-judge rubrics, regression test
+  fixtures, and quantitative scoring metrics (faithfulness, hallucination, context precision) using Promptfoo, DeepEval, or RAGAS.
+---
+
+# LLM Evals Engineer & Benchmarking Specialist
+
+The authoritative reliability engineering skill for testing, benchmarking, and scoring non-deterministic AI outputs. Replaces manual spot-checking with automated CI/CD evaluation pipelines.
+
+## When to Use This Skill
+- Before deploying a new prompt, model version, or RAG pipeline to production.
+- When measuring hallucination rates, answer relevancy, and factual faithfulness.
+- When configuring automated testing tools (`Promptfoo`, `DeepEval`, `RAGAS`, `TruLens`).
+- When defining quantitative grading rubrics for **LLM-as-a-judge** evaluations.
+- Trigger phrases: `"set up evals"`, `"evaluate prompt"`, `"Promptfoo test"`, `"RAGAS evaluation"`, `"measure hallucinations"`.
+
+---
+
+## The Core Evaluation Triad
+
+```
+┌────────────────────────────────────────────────────────┐
+│                   Evaluation Dimensions                │
+├───────────────────┬───────────────────┬────────────────┤
+│ 1. Faithfulness   │ 2. Context        │ 3. Answer      │
+│    (Groundedness) │    Precision      │    Relevancy   │
+├───────────────────┼───────────────────┼────────────────┤
+│ • Are claims in   │ • Did the search  │ • Does answer  │
+│   the answer fully│   engine fetch    │   directly     │
+│   supported by the│   relevant context│   address user │
+│   retrieved chunks│   without clutter?│   question?    │
+└───────────────────┴───────────────────┴────────────────┘
+```
+
+---
+
+## Step-by-Step Evals Implementation (Promptfoo Pattern)
+
+### Step 1: Create Golden Evaluation Dataset (`eval_dataset.yaml`)
+Curate a diverse benchmark suite representing typical queries, edge cases, and adversarial attempts:
+```yaml
+# promptfooconfig.yaml
+description: "RAG Answer Quality & Hallucination Benchmark"
+
+prompts:
+  - "file://prompts/rag_system_prompt.txt"
+
+providers:
+  - id: "openai:gpt-4o"
+  - id: "google:gemini-1.5-pro"
+
+tests:
+  - vars:
+      query: "What is our company refund window for enterprise tiers?"
+      context: "Enterprise contracts have a 45-day refund window upon written notice."
+    assert:
+      - type: contains
+        value: "45"
+      - type: llm-rubric
+        value: "The answer must state that the refund window is 45 days and requires written notice. It must not invent exceptions."
+      - type: latency
+        threshold: 2500 # Max 2.5 seconds
+```
+
+---
+
+## Programmatic DeepEval Implementation (Python)
+
+```python
+from deepeval.metrics import HallucinationMetric, AnswerRelevancyMetric
+from deepeval.test_case import LLMTestCase
+
+# Construct Test Case
+test_case = LLMTestCase(
+    input="How do I reset my API key?",
+    actual_output=agent_response,
+    retrieval_context=[doc_snippet_1, doc_snippet_2]
+)
+
+# 1. Hallucination Metric (Detect unsupported statements)
+hallucination_metric = HallucinationMetric(threshold=0.1)
+hallucination_metric.measure(test_case)
+
+# 2. Answer Relevancy Metric
+relevancy_metric = AnswerRelevancyMetric(threshold=0.8)
+relevancy_metric.measure(test_case)
+
+print(f"Hallucination Score: {hallucination_metric.score} (Passed: {hallucination_metric.is_successful()})")
+print(f"Relevancy Score: {relevancy_metric.score}")
+```
+
+---
+
+## Evals Report Template
+
+```markdown
+### 📊 Evaluation Run Summary: [Benchmark Suite Name]
+
+**Total Test Cases**: 50 | **Passed**: 48 (96%) | **Failed**: 2 (4%)
+**Average Latency**: 1.42s | **Estimated Token Cost**: $0.18
+
+#### Metric Breakdown:
+- **Faithfulness / Grounding**: 98.2%
+- **Answer Relevancy**: 94.5%
+- **Hallucination Rate**: 1.8% (Target < 2.0%)
+
+#### Failed Test Regressions:
+1. **Case #14 (Boundary Condition)**:
+   - *Query*: "Can a trial user invite 10 team members?"
+   - *Failure*: Model answered "Yes" when documentation specified maximum of 5 trial members.
+   - *Remediation*: Update system prompt negative constraints on trial limits.
+```
+
+---
+
+## Anti-Patterns & Traps to Avoid
+
+1. **Self-Grading Bias**: Using the same model to both generate the answer and act as the judge (e.g., evaluating GPT-4o with GPT-4o). Models exhibit documented egocentric bias, favoring their own phrasing and verbosity. Always use cross-model judges (e.g., Claude 3.5 Sonnet judging OpenAI, or human gold standards).
+2. **Subjective Uncalibrated Rubrics**: Asking the judge LLM to *"Rate quality from 1 to 5"* without a rigid scoring breakdown. Unanchored scales drift over time. Use binary checks (`is_faithful: bool`) or explicit G-Eval rubrics with defined criteria for each numerical score.
+3. **Evaluating Exclusively on Synthetic Data**: Testing pipelines solely on clean synthetic questions generated by LLMs. Real users introduce typos, colloquialisms, and incomplete fragments that synthetic datasets miss.
+4. **Flaky Single-Run Testing**: Running evaluations at high temperature ($>0.5$) with only 1 trial, causing CI builds to fail intermittently on stochastic output swings. Benchmark at `temperature=0.0` or run 3 repeated trials for boundary edge cases.
+
+---
+
+## Quality Checklist
+
+- [ ] Ground-truth evaluation dataset includes edge cases, adversarial inputs, and negative constraints.
+- [ ] Evaluation judges are independent of the generation model to prevent self-preference bias.
+- [ ] Scoring rubrics use discrete, verifiable criteria (faithfulness, hallucination, answer relevancy).
+- [ ] CI pipeline sets automated thresholds (e.g., Faithfulness $\ge 95\%$, Hallucination $\le 2\%$) that block PR merges on regressions.
+- [ ] Test runs log latency (p50, p95), total token cost, and full prompt/output traces for failure triage.
+- [ ] Failed test cases include root-cause analysis and actionable prompt or retrieval remediation notes.

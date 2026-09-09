@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "feature-factory-workflow",
+  "name": "Autonomous Feature Factory & Pre-Merge Gate",
+  "description": "End-to-end software development pipeline: task planning, isolated worktree coding, senior peer review, OWASP security auditing, and automated container verification.",
+  "steps": [
+    {
+      "step_id": "step_1_plan_dag",
+      "agent": "lead-orchestrator",
+      "action": "CREATE_FEATURE_PLAN",
+      "depends_on": [],
+      "inputs": {
+        "feature_request": "Add Redis-backed token revocation list to auth service"
+      },
+      "acceptance_criteria": [
+        "Identifies precise files to create and modify",
+        "Includes blast-radius risk assessment"
+      ]
+    },
+    {
+      "step_id": "step_2_worktree_implementation",
+      "agent": "fullstack-engineer",
+      "action": "IMPLEMENT_IN_WORKTREE",
+      "depends_on": ["step_1_plan_dag"],
+      "inputs": {
+        "plan": "{{steps.step_1_plan_dag.output}}"
+      },
+      "acceptance_criteria": [
+        "Develops inside isolated git worktree branch",
+        "Writes unit tests with >=90% line coverage",
+        "All tests pass with 0 errors"
+      ]
+    },
+    {
+      "step_id": "step_3_code_review",
+      "agent": "code-quality-auditor",
+      "action": "AUDIT_DIFF_AND_TESTS",
+      "depends_on": ["step_2_worktree_implementation"],
+      "inputs": {
+        "diff_branch": "{{steps.step_2_worktree_implementation.output}}"
+      },
+      "acceptance_criteria": [
+        "Verifies static typing (mypy / tsc) and linting pass",
+        "Identifies missing TTL or memory leak hazards"
+      ]
+    },
+    {
+      "step_id": "step_4_security_audit",
+      "agent": "security-red-teamer",
+      "action": "SCAN_OWASP_AND_SECRETS",
+      "depends_on": ["step_3_code_review"],
+      "inputs": {
+        "code_artifacts": "{{steps.step_3_code_review.output}}"
+      },
+      "acceptance_criteria": [
+        "Zero committed secrets detected",
+        "No unsanitized inputs flowing into queries"
+      ]
+    },
+    {
+      "step_id": "step_5_sre_containerize",
+      "agent": "sre-devops-guardian",
+      "action": "VERIFY_CONTAINER_BUILD",
+      "depends_on": ["step_4_security_audit"],
+      "inputs": {
+        "verified_branch": "{{steps.step_4_security_audit.output}}"
+      },
+      "acceptance_criteria": [
+        "Multi-stage Dockerfile builds with zero critical CVEs",
+        "Container executes as non-root user"
+      ]
+    }
+  ]
+}

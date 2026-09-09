@@ -1,0 +1,15 @@
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+
+# Agent & Runtime Memory Databases
+.memory/
+*.db
+*.bak
+
+# Environment & Secrets
+.env
+
+# OS Clutter
+.DS_Store
+Thumbs.db

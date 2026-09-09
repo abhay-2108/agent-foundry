@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "deep-research-workflow",
+  "name": "Autonomous Deep Research & Briefing Synthesis",
+  "description": "Multi-agent research pipeline that crawls primary web sources, triangulates claims, extracts knowledge graph triplets, and compiles an executive markdown and office briefing.",
+  "steps": [
+    {
+      "step_id": "step_1_plan_scope",
+      "agent": "lead-orchestrator",
+      "action": "DECOMPOSE_RESEARCH_QUESTIONS",
+      "depends_on": [],
+      "inputs": {
+        "topic": "Next-Generation Vector Search Algorithms"
+      },
+      "acceptance_criteria": [
+        "Identifies at least 3 distinct sub-questions",
+        "Sets minimum source corroboration threshold to 2"
+      ]
+    },
+    {
+      "step_id": "step_2_web_crawl",
+      "agent": "research-analyst",
+      "action": "CRAWL_AND_TRIANGULATE",
+      "depends_on": ["step_1_plan_scope"],
+      "inputs": {
+        "sub_questions": "{{steps.step_1_plan_scope.output}}",
+        "max_sources": 8
+      },
+      "acceptance_criteria": [
+        "Collects evidence from official documentation or benchmark repos",
+        "Filters out uncorroborated single-source claims"
+      ]
+    },
+    {
+      "step_id": "step_3_graph_extraction",
+      "agent": "research-analyst",
+      "action": "EXTRACT_ENTITY_RELATIONS",
+      "depends_on": ["step_2_web_crawl"],
+      "inputs": {
+        "raw_findings": "{{steps.step_2_web_crawl.output}}"
+      },
+      "acceptance_criteria": [
+        "Extracts (Subject, Predicate, Object) triplets",
+        "Maps trade-offs across algorithms"
+      ]
+    },
+    {
+      "step_id": "step_4_compile_brief",
+      "agent": "technical-writer-scribe",
+      "action": "SYNTHESIZE_EXECUTIVE_BRIEF",
+      "depends_on": ["step_3_graph_extraction"],
+      "inputs": {
+        "graph_data": "{{steps.step_3_graph_extraction.output}}"
+      },
+      "acceptance_criteria": [
+        "Includes executive summary scannable in <60 seconds",
+        "Every claim links to primary source URL",
+        "Generates comparative markdown table"
+      ]
+    }
+  ]
+}
