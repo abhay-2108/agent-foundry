@@ -1,137 +1,204 @@
-# OpenCode Skills Setup Guide
+# OpenCode Global Integration Guide: Skills, Agents & Commands
 
-This guide explains how to integrate and activate the **30 universal Agent Skills** from this repository into **OpenCode**.
-
----
-
-## 1. How Skills Work in OpenCode
-
-OpenCode adheres to the universal **Agent Skill specification**:
-- Each skill resides in a dedicated folder containing a **`SKILL.md`** file.
-- **Progressive Disclosure**: OpenCode reads lightweight YAML frontmatter (`name` and `description`) at startup.
-- The full instructions, code recipes, anti-patterns, and quality checklists are loaded into context only when triggered by relevant developer prompts.
+This guide provides the complete, authoritative setup for integrating the **10 Autonomous Agent Personas**, **30 Modular Skills**, and **30 Custom Slash Commands** from this repository into **OpenCode CLI** across **all projects globally**.
 
 ---
 
-## 2. Setup Methods
+## 1. OpenCode Architecture & Asset Discovery
 
-You can connect OpenCode to the `skills/` directory using one of the following methods:
+OpenCode adheres to universal agent specifications and discovers extensions from designated global configuration roots:
 
-### Method A: Directory Junction / Symlink (Recommended)
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   GLOBAL OPENCODE CONFIGURATION ROOT                   │
+│   Windows:        ~/.config/opencode/    AND    ~/.opencode/           │
+│   Linux / macOS:  ~/.config/opencode/    AND    ~/.opencode/           │
+└──────────────┬────────────────────────┬──────────────────────┬─────────┘
+               │                        │                      │
+               ▼                        ▼                      ▼
+┌────────────────────────┐┌────────────────────────┐┌────────────────────────┐
+│    agents/*.md         ││    skills/*/SKILL.md   ││    commands/*.md       │
+│  10 Autonomous Personas││  30 Modular Skill Sets ││  30 Quick Slash Actions│
+│  (Switched with `Tab`) ││ (Triggered Semantically││ (Triggered with `Ctrl+P│
+│                        ││   or via `@skills/`)   ││      or `/command`)    │
+└────────────────────────┘└────────────────────────┘└────────────────────────┘
+```
 
-Link the canonical `skills/` directory directly into `.opencode/skills` so OpenCode automatically discovers all 30 skills without duplicating files:
+### Critical Discovery Rules:
+1. **Global Configuration Paths**: On Windows, OpenCode evaluates user profile paths (`$env:USERPROFILE\.config\opencode\` and `$env:USERPROFILE\.opencode\`). OpenCode does **not** automatically scan `%APPDATA%\opencode` by default.
+2. **Tab Switching Mechanics**: In the OpenCode TUI, pressing the **`Tab`** key cycles through **`primary`** agents (`mode: primary`). Agents marked with `mode: subagent` are omitted from `Tab` cycling and can only be invoked via `@` mentions or subtask delegations.
+3. **Progressive Disclosure**: Skills are loaded dynamically when relevant keywords match their YAML frontmatter, preserving your model's context window.
 
-#### On Windows (PowerShell):
+---
+
+## 2. Master Agent Fleet Catalog (10 Operational Personas)
+
+All 10 agent personas in this repository are configured with `mode: primary` so they can be switched instantaneously using the `Tab` button inside any project session:
+
+| Agent Persona | Role & Mandate | OpenCode Mode | Bound Skills Matrix |
+| :--- | :--- | :--- | :--- |
+| **`lead-orchestrator`** | **Master Workflow & Team Lead**: Decomposes complex goals into acyclic DAGs, coordinates multi-agent consensus, and enforces human checkpoints. | `primary` (`Tab`) | `plan-and-execute`, `multi-agent-orchestrator`, `human-in-the-loop-governor`, `session-handoff`, `brainstorming`, `knowledge-capture`, `llm-observability` |
+| **`fullstack-engineer`** | **End-to-End Production Builder**: Designs clean backend APIs, resilient database schemas, premium frontend UIs, and Docker environments. | `primary` (`Tab`) | `backend-architecture`, `frontend-design`, `docker-container-architect`, `git-plumbing-and-automation`, `mcp-tool-integrator`, `llm-observability` |
+| **`code-quality-auditor`** | **Senior Peer Reviewer & Debugger**: Enforces pre-merge quality gates, isolates bugs with minimal failing repros, and audits complexity. | `primary` (`Tab`) | `code-reviewer`, `bug-hunter`, `llm-evals-engineer`, `agent-trajectory-evaluator`, `llm-observability` |
+| **`research-analyst`** | **Exhaustive Discovery & Triangulation**: Deep codebase discovery, web documentation scraping, citation cross-checking, and report synthesis. | `primary` (`Tab`) | `workspace-researcher`, `agentic-rag-engineer`, `graph-rag-builder`, `office-doc-engine`, `knowledge-capture`, `llm-observability` |
+| **`security-red-teamer`** | **Adversarial Safety & Vulnerability Auditor**: OWASP scanning, hardcoded credential detection, prompt injection testing, and dual guardrails. | `primary` (`Tab`) | `security-vulnerability-scanner`, `prompt-injection-red-teamer`, `guardrails-enforcer`, `llm-observability` |
+| **`data-scientist`** | **Quantitative Rigor & ML Pipelines**: Exploratory data analysis (EDA), data cleaning, statistical hypothesis testing, and SHAP explainability. | `primary` (`Tab`) | `eda-and-data-cleaning`, `feature-engineering-pipeline`, `statistical-hypothesis-tester`, `model-explainability-shap`, `llm-observability` |
+| **`browser-navigator`** | **E2E Web Specialist & Playwright Driver**: Interacts with live web applications, handles dynamic JS obstacles, and captures screenshot evidence. | `primary` (`Tab`) | `workspace-researcher`, `office-doc-engine`, `llm-observability` |
+| **`sre-devops-guardian`** | **Reliability, CI/CD & Infrastructure Guardian**: Multi-stage minimal container hardening, git worktree isolation, and incident triage. | `primary` (`Tab`) | `docker-container-architect`, `git-plumbing-and-automation`, `backend-architecture`, `llm-observability` |
+| **`finops-token-router`** | **Inference Economics & Cost Optimization**: Routes requests between fast/cheap models and frontier reasoning models, and monitors token burn. | `primary` (`Tab`) | `llm-observability`, `llm-evals-engineer`, `backend-architecture` |
+| **`technical-writer-scribe`** | **Documentation & ADR Architect**: Compiles structured markdown, Architecture Decision Records (ADRs), and visual mermaid diagrams. | `primary` (`Tab`) | `knowledge-capture`, `office-doc-engine`, `workspace-researcher`, `llm-observability` |
+
+---
+
+## 3. One-Command Global Setup
+
+Run the setup commands below once to link all **Agents**, **Skills**, and **Commands** globally across your entire operating system.
+
+### On Windows (PowerShell):
+
 ```powershell
-# Run from repository root
-New-Item -ItemType Junction -Path ".opencode/skills" -Target "skills"
+# 1. Define repo root path (adjust if cloned to a custom location)
+$REPO = "P:\AIML Projects\Skills and Agents"
+
+# 2. Ensure target configuration root directories exist
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode" | Out-Null
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.opencode" | Out-Null
+
+# 3. Clean any existing stale junctions/directories
+Remove-Item "$env:USERPROFILE\.config\opencode\agents" -Force -Recurse -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.opencode\agents" -Force -Recurse -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.config\opencode\skills" -Force -Recurse -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.opencode\skills" -Force -Recurse -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.config\opencode\commands" -Force -Recurse -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.opencode\commands" -Force -Recurse -ErrorAction SilentlyContinue
+
+# 4. Create directory junctions for Agents (from AppData storage)
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agents" -Target "$env:APPDATA\opencode\agents" | Out-Null
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.opencode\agents" -Target "$env:APPDATA\opencode\agents" | Out-Null
+
+# 5. Create directory junctions for Skills (from repo)
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\skills" -Target "$REPO\skills" | Out-Null
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.opencode\skills" -Target "$REPO\skills" | Out-Null
+
+# 6. Create directory junctions for Commands (from AppData storage)
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\commands" -Target "$env:APPDATA\opencode\commands" | Out-Null
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.opencode\commands" -Target "$env:APPDATA\opencode\commands" | Out-Null
+
+# 7. Verify agent discovery
+Write-Host "`n=== Registered Primary Agents ===" -ForegroundColor Cyan
+opencode agent list | Select-String "\(primary\)"
 ```
 
-#### On Linux / macOS (Bash):
+### On Linux / macOS (Bash):
+
 ```bash
-# Run from repository root
-ln -s ../skills .opencode/skills
+REPO="/path/to/Skills and Agents"
+
+mkdir -p ~/.config/opencode ~/.opencode
+
+# Link agents
+ln -sfn "$REPO/.opencode/agents" ~/.config/opencode/agents
+ln -sfn "$REPO/.opencode/agents" ~/.opencode/agents
+
+# Link skills
+ln -sfn "$REPO/skills" ~/.config/opencode/skills
+ln -sfn "$REPO/skills" ~/.opencode/skills
+
+# Link commands
+ln -sfn "$REPO/.opencode/commands" ~/.config/opencode/commands
+ln -sfn "$REPO/.opencode/commands" ~/.opencode/commands
+
+# Verify
+opencode agent list | grep "(primary)"
 ```
 
 ---
 
-### Method B: OpenCode Configuration (`opencode.json`)
+## 4. Developer Workflow & TUI Controls
 
-If your OpenCode environment uses a configuration file, add the `skills/` path to the skills discovery array:
+Once linked, open OpenCode in **any project or folder**:
 
-Create or update `.opencode/opencode.json` (or your global `~/.config/opencode/config.json`):
-
-```json
-{
-  "$schema": "https://opencode.dev/schema.json",
-  "skills": {
-    "paths": [
-      "./skills",
-      "./.opencode/skills"
-    ],
-    "auto_discover": true
-  },
-  "mcpServers": {
-    "code-sandbox": {
-      "command": "python",
-      "args": ["./mcp_servers/code_sandbox_server.py"]
-    },
-    "filesystem-sandbox": {
-      "command": "python",
-      "args": ["./mcp_servers/filesystem_server.py"]
-    },
-    "hybrid-retriever": {
-      "command": "python",
-      "args": ["./mcp_servers/hybrid_retriever_server.py"]
-    }
-  }
-}
-```
-
----
-
-### Method C: Global OpenCode Config
-
-To make these skills available across **all** your local projects in OpenCode:
-
-#### On Windows:
-```powershell
-# Copy or junction to user config directory
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.opencode\skills" -Target "p:\AIML Projects\Skills and Agents\skills"
-```
-
-#### On Linux / macOS:
 ```bash
-ln -s "/path/to/Skills and Agents/skills" ~/.opencode/skills
+opencode
 ```
 
----
-
-## 3. How to Trigger Skills in OpenCode
-
-Once configured, skills activate automatically through two mechanisms:
-
-### 1. Automatic Semantic Triggering (Recommended)
-OpenCode matches your prompt against the skill's frontmatter `description`. For example:
-- *"Plan out the architecture before writing code"* $\rightarrow$ Triggers **`plan-and-execute`**
-- *"Diagnose this crash and write a failing repro test"* $\rightarrow$ Triggers **`bug-hunter`**
-- *"Review this git diff for memory leaks and typing errors"* $\rightarrow$ Triggers **`code-reviewer`**
-- *"Scan for SQL injection and hardcoded secrets"* $\rightarrow$ Triggers **`security-vulnerability-scanner`**
-
-### 2. Explicit Mention Triggering
-Directly mention the skill path in your prompt:
+The TUI prompt displays:
 ```text
-@skills/bug-hunter Fix the IndexError in src/auth/jwt_service.py
+Ask anything… "What is the tech stack of this project?"
+Build · OpenCode Zen
+tab agents  ctrl+p commands
 ```
-or
+
+### 1. Cycle Agents with the `Tab` Key
+Press **`Tab`** (or `Shift+Tab` to reverse) while at the input prompt to cycle through:
+$$\text{Build} \longrightarrow \text{Plan} \longrightarrow \textbf{lead-orchestrator} \longrightarrow \textbf{fullstack-engineer} \longrightarrow \textbf{code-quality-auditor} \longrightarrow \dots$$
+
+### 2. Run Commands with `Ctrl+P` or `/`
+Press **`Ctrl+P`** or type **`/`** to open the interactive command palette containing all 30 pre-built workflows:
+- `/plan <task>`: Decomposes a multi-step task into an architectural plan.
+- `/review`: Peer reviews uncommitted diffs for typing, security, and edge cases.
+- `/debug`: Minimal reproduction test runner and bug hunting.
+- `/secscan`: OWASP vulnerability audit and secret detection.
+- `/backend`: Designs API contracts, middleware, and database schemas.
+- `/frontend`: Implements UI components with responsive styling and polish.
+- `/git`: Spawns an isolated git worktree for safe code exploration.
+- `/handoff`: Compiles `HANDOFF.md` to preserve state across session resets.
+
+### 3. Mention Agents & Skills Explicitly
+Directly summon specialized personas or toolkits in your prompt:
 ```text
-Use the plan-and-execute skill to create an implementation plan for adding Redis caching.
+@lead-orchestrator Decompose the migration from SQLite to Postgres.
+@skills/security-vulnerability-scanner Audit src/auth/oauth.py for SSRF.
 ```
 
----
-
-## 4. Recommended Starter Skills for OpenCode
-
-For daily programming in OpenCode, we recommend starting with these 5 core skills:
-
-1. **[`plan-and-execute`](../skills/plan-and-execute/SKILL.md)**: Prevents runaway code changes by creating 2–5 min task DAGs first.
-2. **[`bug-hunter`](../skills/bug-hunter/SKILL.md)**: Scientific bug isolation with minimal failing tests (RED $\rightarrow$ GREEN).
-3. **[`code-reviewer`](../skills/code-reviewer/SKILL.md)**: Automated senior peer reviews on typing, edge cases, and code smells.
-4. **[`git-plumbing-and-automation`](../skills/git-plumbing-and-automation/SKILL.md)**: Spawns isolated git worktrees so OpenCode never breaks your active branch.
-5. **[`session-handoff`](../skills/session-handoff/SKILL.md)**: Maintains `HANDOFF.md` so you never lose context between chat resets.
+### 4. Automatic Semantic Triggering
+Prompting with natural intent triggers skills automatically:
+- *"Write unit tests and reproduce this KeyError"* $\rightarrow$ triggers `bug-hunter`
+- *"Benchmark token usage and prompt caching"* $\rightarrow$ triggers `finops-token-router`
 
 ---
 
-## 5. Verification
+## 5. Customizing Models & Permissions
 
-Verify that OpenCode recognizes the skills:
+Each agent's configuration is stored as clean Markdown in `.opencode/agents/<agent-name>.md`:
 
-1. Launch an OpenCode session:
+```markdown
+---
+description: Autonomous supervisor that decomposes complex goals into dependency DAGs...
+mode: primary
+model: anthropic/claude-3-7-sonnet-20250219
+temperature: 0.1
+permissions:
+  edit: allow
+  bash: allow
+  write: allow
+  read: allow
+---
+
+# Lead Orchestrator Agent
+...
+```
+
+- **Change Model**: Set `model:` to any model supported by your providers (e.g., `openai/gpt-4o`, `google/gemini-2.5-pro`, or remove the line to inherit your active session model).
+- **Tab Cycling Behavior**: Maintain `mode: primary` to keep the agent switchable via `Tab`. Change to `mode: subagent` if you wish to reserve an agent for `@` mentions only.
+- **Adjust Permissions**: Fine-tune permission gates between `allow`, `ask`, and `deny`.
+
+---
+
+## 6. Verification Checklist
+
+Run these quick checks whenever updating your OpenCode environment:
+
+1. **Verify Registered Agents**:
    ```bash
-   opencode
+   opencode agent list
    ```
-2. Type:
-   ```text
-   What skills do you have available?
+   *Expected*: All 10 custom personas are displayed with `(primary)`.
+
+2. **Verify Global Junctions (Windows PowerShell)**:
+   ```powershell
+   Get-Item "$env:USERPROFILE\.config\opencode\agents", "$env:USERPROFILE\.config\opencode\skills", "$env:USERPROFILE\.config\opencode\commands" | Select-Object Name, LinkType, Target
    ```
-3. OpenCode should list the skills from `skills/` or `.opencode/skills/`.
+
+3. **Verify TUI Hotkeys**:
+   Start `opencode`, press `Tab` to cycle personas, and press `Ctrl+P` to verify custom slash commands.

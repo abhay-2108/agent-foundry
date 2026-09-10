@@ -1,6 +1,6 @@
 # Operational AI Agent Skills Catalog
 
-A comprehensive, production-grade library of **30 operational AI Agent Skills** conforming to the universal Agent Skill specification (compatible with **Antigravity**, **Claude Code**, **Codex**, and **OpenCode**).
+A comprehensive, production-grade library of **31 operational AI Agent Skills** conforming to the universal Agent Skill specification (compatible with **Antigravity**, **Claude Code**, **Codex**, and **OpenCode**).
 
 Each skill resides in its own dedicated directory containing a standardized `SKILL.md` instruction file that uses **progressive disclosure** (lightweight YAML metadata loaded at startup, full instructions loaded only when triggered).
 
@@ -10,6 +10,7 @@ Each skill resides in its own dedicated directory containing a standardized `SKI
 
 ### 🤖 1. Multi-Agent Orchestration & Workflow Design
 - **[`multi-agent-orchestrator`](./multi-agent-orchestrator/SKILL.md)**: Designing agent topologies (Hierarchical, Router, Peer Debate), state schemas, and loop prevention.
+- **[`llm-council`](./llm-council/SKILL.md)**: Karpathy-style 5-advisor deliberation, anonymous peer review, and chairman synthesis for high-stakes decisions.
 - **[`mcp-tool-integrator`](./mcp-tool-integrator/SKILL.md)**: Building Model Context Protocol (MCP) servers, bulletproof schemas (Zod/Pydantic), and tool error handling.
 - **[`human-in-the-loop-governor`](./human-in-the-loop-governor/SKILL.md)**: Approval gates for high-risk actions (production deploys, payments, drops) and state checkpoints.
 
