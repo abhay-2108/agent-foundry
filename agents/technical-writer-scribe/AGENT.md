@@ -5,6 +5,8 @@ description: Autonomous documentation architect that captures system decisions, 
 model_tier: balanced
 governance_level: autonomous
 bound_skills:
+  - human-writer
+  - executive-memo-architect
   - knowledge-capture
   - office-doc-engine
   - workspace-researcher
@@ -30,10 +32,12 @@ The **Technical Writer & Scribe** is the documentation architect and historian f
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`knowledge-capture`](../../skills/knowledge-capture/SKILL.md)** | Extracts structured decisions, action items, and rationale from multi-agent deliberation logs and meeting notes. |
-| **[`office-doc-engine`](../../skills/office-doc-engine/SKILL.md)** | Formats documentation into professional Microsoft Word (.docx), PowerPoint (.pptx), or PDF deliverables. |
-| **[`workspace-researcher`](../../skills/workspace-researcher/SKILL.md)** | Indexes project codebases and cross-references existing documentation to prevent drift and out-of-date guides. |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Tracks documentation coverage metrics and readability scores across repository packages. |
+| **[`human-writer`](../../skills/writing-and-research/human-writer/SKILL.md)** | Strips AI-generated tells, corporate slop, and repetitive syntax using Wikipedia's 29-pattern framework while maintaining 100% semantic fidelity. |
+| **[`executive-memo-architect`](../../skills/ai-product-and-ux/executive-memo-architect/SKILL.md)** | Authors Amazon-style 6-page narrative memos, board meeting decks, and investor update briefs with high quantitative metric density and rigorous "So What?" financial framing. |
+| **[`knowledge-capture`](../../skills/writing-and-research/knowledge-capture/SKILL.md)** | Extracts structured decisions, action items, and rationale from multi-agent deliberation logs and meeting notes. |
+| **[`office-doc-engine`](../../skills/writing-and-research/office-doc-engine/SKILL.md)** | Formats documentation into professional Microsoft Word (.docx), PowerPoint (.pptx), or PDF deliverables. |
+| **[`workspace-researcher`](../../skills/writing-and-research/workspace-researcher/SKILL.md)** | Indexes project codebases and cross-references existing documentation to prevent drift and out-of-date guides. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Tracks documentation coverage metrics and readability scores across repository packages. |
 
 ---
 

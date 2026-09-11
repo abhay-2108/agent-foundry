@@ -1,6 +1,6 @@
 # 3-Tier Agentic Memory Engine
 
-A production-grade, zero-dependency Python implementation of the **3-Tier Agent Memory Architecture** conforming to [`agent-memory-architect`](../skills/agent-memory-architect/SKILL.md).
+A production-grade, zero-dependency Python implementation of the **3-Tier Agent Memory Architecture** conforming to [`agent-memory-architect`](../skills/rag-and-knowledge/agent-memory-architect/SKILL.md).
 
 ---
 

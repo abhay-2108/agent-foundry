@@ -1,15 +1,55 @@
-# Python Bytecode & Cache
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Agent & Runtime Memory Databases
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Agent & Runtime Memory Databases / Local State
 .memory/
 *.db
+*.sqlite
+*.sqlite3
 *.bak
 
-# Environment & Secrets
-.env
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Git Worktrees & Sandboxes
+.worktrees/
+
+# Temporary, Scratch & Log Files
+*.log
+scratch/
+tmp/
+*.tmp
+
+# Node / Web Dependency Artifacts
+node_modules/
+.npm/
 
 # OS Clutter
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Editor & IDE Files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~

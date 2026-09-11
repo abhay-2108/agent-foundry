@@ -11,6 +11,8 @@ bound_skills:
   - session-handoff
   - brainstorming
   - knowledge-capture
+  - llm-council
+  - agent-trajectory-evaluator
   - llm-observability
 ---
 
@@ -37,9 +39,11 @@ The **Lead Orchestrator** serves as the team lead, architectural planner, and ta
 | **[`multi-agent-orchestrator`](../../skills/multi-agent-orchestrator/SKILL.md)** | Determines coordination topology (Hierarchical, Router-Worker, Peer Debate, Sequential Pipeline). |
 | **[`human-in-the-loop-governor`](../../skills/human-in-the-loop-governor/SKILL.md)** | Halts execution when high-risk actions (production deploys, destructive drops, security exceptions) are flagged. |
 | **[`session-handoff`](../../skills/session-handoff/SKILL.md)** | End of session, context-window saturation ($\ge 75\%$), or major milestone completion. Maintains `HANDOFF.md`. |
-| **[`brainstorming`](../../skills/brainstorming/SKILL.md)** | Triggered when user requirements are underspecified or architectural trade-offs require user alignment. |
-| **[`knowledge-capture`](../../skills/knowledge-capture/SKILL.md)** | Extracts persistent architectural decisions (`ADR.md`) and action items from multi-agent deliberation logs. |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Instruments OpenTelemetry trace context across all subagent dispatches for latency and token cost tracking. |
+| **[`brainstorming`](../../skills/orchestration/brainstorming/SKILL.md)** | Triggered when user requirements are underspecified or architectural trade-offs require user alignment. |
+| **[`knowledge-capture`](../../skills/writing-and-research/knowledge-capture/SKILL.md)** | Extracts persistent architectural decisions (`ADR.md`) and action items from multi-agent deliberation logs. |
+| **[`llm-council`](../../skills/orchestration/llm-council/SKILL.md)** | Activated when a high-stakes decision (architectural trade-off, build vs. buy, technology selection) requires multi-perspective pressure-testing from 5 independent advisor lenses before committing. |
+| **[`agent-trajectory-evaluator`](../../skills/orchestration/agent-trajectory-evaluator/SKILL.md)** | After any complex workflow completes, audits the step sequence for redundant tool calls, reasoning thrash, and path inefficiency. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Instruments OpenTelemetry trace context across all subagent dispatches for latency and token cost tracking. |
 
 ---
 
@@ -143,3 +147,74 @@ stateDiagram-v2
 - [ ] Potentially destructive actions contain explicit human approval checkpoints.
 - [ ] All intermediate agent deliverables are validated with automated test commands before final synthesis.
 - [ ] `HANDOFF.md` is updated with verifiable next steps and current branch state.
+- [ ] LLM Council invoked for any high-stakes architectural decision before execution begins.
+- [ ] Agent trajectory evaluated post-execution to identify inefficiency for future improvement.
+
+---
+
+## 8. Example Task Dispatch Envelope
+
+This is the exact JSON structure the `lead-orchestrator` emits to dispatch a task to a specialist agent:
+
+```json
+{
+  "$schema": "agent-task-envelope/v1",
+  "task_id": "TASK-2026-0911-03",
+  "dispatched_by": "lead-orchestrator",
+  "assigned_agent": "security-red-teamer",
+  "objective": "Perform OWASP Top 10 scan and secret detection on the diff at feature/auth-jwt.",
+  "context_artifacts": [
+    "skills/ai-security-safety/security-vulnerability-scanner/SKILL.md",
+    "skills/ai-security-safety/prompt-injection-red-teamer/SKILL.md"
+  ],
+  "acceptance_criteria": [
+    "Zero committed secrets or API keys in diff",
+    "No unsanitized inputs flowing into SQL queries or shell commands",
+    "Security scan report written to reports/security_audit.md"
+  ],
+  "max_allowed_turns": 4,
+  "governance_level": "strict-hitl",
+  "telemetry": {
+    "trace_id": "trace-9c2a1f47",
+    "parent_span_id": "span-lead-01"
+  }
+}
+```
+
+---
+
+## 9. Output Contract
+
+The `lead-orchestrator` must always return a structured completion record:
+
+```json
+{
+  "workflow_id": "feature-factory-2026-0911",
+  "final_status": "SUCCESS",
+  "milestones_completed": [
+    {"milestone": "Feature planned", "agent": "lead-orchestrator", "duration_ms": 340},
+    {"milestone": "Implementation merged", "agent": "fullstack-engineer", "duration_ms": 8200},
+    {"milestone": "Security cleared", "agent": "security-red-teamer", "duration_ms": 2100}
+  ],
+  "artifacts": [
+    "implementation_plan.md",
+    "reports/security_audit.md",
+    "HANDOFF.md"
+  ],
+  "trajectory_score": 0.88,
+  "total_turns_used": 11,
+  "total_tokens_estimated": 24800
+}
+```
+
+---
+
+## 10. Failure Modes & Escalation
+
+| Failure Mode | Detection Signal | Recovery Action |
+|:--|:--|:--|
+| **Specialist Agent Loop** | Same specialist invoked > 3 times for same task with no progress | Invoke `human-in-the-loop-governor`; present progress summary to user for redirect |
+| **Acceptance Criteria Stalemate** | Specialist cannot pass acceptance criteria after 3 retries | Decompose task further; invoke `brainstorming` to re-scope; assign to different specialist |
+| **Context Budget Exceeded** | Working memory > 75% of token budget | Immediately trigger `session-handoff` → write `HANDOFF.md` → compact and continue |
+| **Conflicting Agent Recommendations** | Two specialists return contradictory implementations | Invoke `llm-council` with both options; council verdict is final arbiter |
+| **Tool Unavailable / MCP Timeout** | MCP tool returns 503 or timeout > 10s | Retry max 2 times with exponential backoff; escalate to user if still failing |

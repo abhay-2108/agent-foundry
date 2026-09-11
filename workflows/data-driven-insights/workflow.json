@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "data-driven-insights-workflow",
+  "name": "Autonomous Data-Driven Insights Pipeline",
+  "description": "End-to-end ML analytics pipeline: EDA profiling, feature engineering, statistical hypothesis testing, SHAP model explainability, and executive insight synthesis with a model card.",
+  "version": "1.0.0",
+  "author": "agent-foundry",
+  "estimated_duration_minutes": 25,
+  "metadata": {
+    "primary_agents": ["data-scientist", "technical-writer-scribe"],
+    "primary_skills": ["advanced-data-analyst", "eda-and-data-cleaning", "feature-engineering-pipeline", "statistical-hypothesis-tester", "model-explainability-shap"],
+    "tags": ["data-science", "ml", "analytics", "explainability"]
+  },
+  "global_inputs": {
+    "dataset_path": "path/to/dataset.csv",
+    "target_column": "churn",
+    "experiment_name": "Customer Churn Prediction Analysis"
+  },
+  "steps": [
+    {
+      "step_id": "step_1_eda_profiling",
+      "agent": "data-scientist",
+      "action": "RUN_EDA_PIPELINE",
+      "depends_on": [],
+      "inputs": {
+        "dataset_path": "{{global_inputs.dataset_path}}",
+        "target_col": "{{global_inputs.target_column}}",
+        "skill": "eda-and-data-cleaning"
+      },
+      "acceptance_criteria": [
+        "Data Quality Report generated with overall quality score",
+        "Missingness mechanisms (MCAR/MAR/MNAR) classified for all columns",
+        "Leakage risk columns flagged before any feature engineering",
+        "Outlier bounds computed per column using IQR or Z-score"
+      ],
+      "on_failure": "HALT_AND_REPORT"
+    },
+    {
+      "step_id": "step_2_feature_engineering",
+      "agent": "data-scientist",
+      "action": "BUILD_FEATURE_PIPELINE",
+      "depends_on": ["step_1_eda_profiling"],
+      "inputs": {
+        "clean_dataset": "{{steps.step_1_eda_profiling.output}}",
+        "target_col": "{{global_inputs.target_column}}",
+        "skill": "feature-engineering-pipeline"
+      },
+      "acceptance_criteria": [
+        "All periodic datetime columns encoded with sin/cos projection",
+        "High-cardinality categoricals encoded with smoothed target encoding (fitted on train only)",
+        "Missing indicator columns added for MNAR-suspect features",
+        "Feature Engineering Audit table generated documenting all transformations"
+      ],
+      "on_failure": "HALT_AND_REPORT"
+    },
+    {
+      "step_id": "step_3_hypothesis_testing",
+      "agent": "data-scientist",
+      "action": "RUN_STATISTICAL_VALIDATION",
+      "depends_on": ["step_2_feature_engineering"],
+      "inputs": {
+        "feature_matrix": "{{steps.step_2_feature_engineering.output}}",
+        "target_col": "{{global_inputs.target_column}}",
+        "skill": "statistical-hypothesis-tester"
+      },
+      "acceptance_criteria": [
+        "SRM check performed and passed before any significance testing",
+        "Test type selected from decision tree (parametric vs non-parametric) based on normality",
+        "Effect size (Cohen's d) computed alongside p-value",
+        "Multiple comparison correction (BH-FDR) applied to all secondary metrics"
+      ],
+      "on_failure": "HALT_AND_REPORT"
+    },
+    {
+      "step_id": "step_4_model_explainability",
+      "agent": "data-scientist",
+      "action": "GENERATE_SHAP_EXPLANATIONS",
+      "depends_on": ["step_3_hypothesis_testing"],
+      "inputs": {
+        "validated_features": "{{steps.step_3_hypothesis_testing.output}}",
+        "target_col": "{{global_inputs.target_column}}",
+        "skill": "model-explainability-shap"
+      },
+      "acceptance_criteria": [
+        "TreeSHAP explainer selected for tree model (not slower KernelSHAP)",
+        "Global beeswarm plot generated showing feature importance with direction",
+        "Local waterfall plots generated for 3 representative instances (correct, incorrect, edge-case)",
+        "Fairness audit run on all sensitive attributes; disparity ratio computed"
+      ],
+      "on_failure": "CONTINUE_WITH_WARNING"
+    },
+    {
+      "step_id": "step_5_executive_synthesis",
+      "agent": "technical-writer-scribe",
+      "action": "SYNTHESIZE_INSIGHT_REPORT",
+      "depends_on": ["step_4_model_explainability"],
+      "inputs": {
+        "eda_report": "{{steps.step_1_eda_profiling.output}}",
+        "shap_results": "{{steps.step_4_model_explainability.output}}",
+        "hypothesis_results": "{{steps.step_3_hypothesis_testing.output}}",
+        "experiment_name": "{{global_inputs.experiment_name}}",
+        "skill": "advanced-data-analyst"
+      },
+      "acceptance_criteria": [
+        "Every finding uses the 4-part Insight Architecture (Finding → Context → Impact → Action)",
+        "Model Card generated with fairness audit summary",
+        "Executive brief scannable in < 60 seconds with KPI summary table",
+        "All claims linked to supporting statistical evidence (p-values, effect sizes, SHAP rankings)"
+      ],
+      "on_failure": "HALT_AND_REPORT"
+    }
+  ]
+}

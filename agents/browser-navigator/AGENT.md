@@ -122,3 +122,91 @@ stateDiagram-v2
 - [ ] Browser contexts are initialized with standard viewports (1920x1080) and cleaned up inside `finally` blocks.
 - [ ] Output records validate against target JSON schemas without null-value leaks.
 - [ ] Extracted datasets are formatted with clean markdown or tabular files.
+
+---
+
+## 8. Playwright E2E Test Suite Template
+
+When implementing or executing automated end-to-end (E2E) browser verification suites:
+
+```python
+import pytest
+from playwright.sync_api import Page, expect
+
+def test_critical_user_checkout_flow(page: Page) -> None:
+    # 1. Navigation with explicit networkidle state
+    page.goto("https://app.example.com/login", wait_until="networkidle")
+    
+    # 2. Resilient semantic selector interactions
+    page.get_by_label("Email Address").fill("testuser@example.com")
+    page.get_by_label("Password").fill("Secret123!")
+    page.get_by_role("button", name="Sign In").click()
+    
+    # 3. Explicit UI assertion
+    expect(page.get_by_role("heading", name="Dashboard")).to_be_visible(timeout=5000)
+    
+    # 4. Critical journey step
+    page.get_by_role("link", name="Billing").click()
+    page.wait_for_load_state("domcontentloaded")
+    
+    # 5. Visual regression checkpoint
+    page.screenshot(path="artifacts/screenshots/billing_loaded.png", full_page=True)
+    expect(page.get_by_test_id("subscription-status")).to_have_text("Active")
+```
+
+---
+
+## 9. Standardized E2E Test Output Contract
+
+The `browser-navigator` produces a comprehensive E2E test execution report:
+
+```json
+{
+  "$schema": "agent-e2e-report/v1",
+  "test_run_id": "E2E-2026-0911-04",
+  "target_base_url": "https://app.example.com",
+  "browser_engine": "chromium",
+  "viewport": { "width": 1920, "height": 1080 },
+  "overall_status": "PASSED",
+  "summary": {
+    "total_tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "flaky": 0,
+    "duration_seconds": 14.8
+  },
+  "test_cases": [
+    {
+      "test_name": "test_critical_user_checkout_flow",
+      "status": "PASSED",
+      "duration_ms": 2840,
+      "steps": [
+        { "name": "Navigate to /login", "duration_ms": 420, "status": "OK" },
+        { "name": "Submit credentials", "duration_ms": 310, "status": "OK" },
+        { "name": "Assert Dashboard visibility", "duration_ms": 110, "status": "OK" },
+        { "name": "Navigate to Billing", "duration_ms": 680, "status": "OK" }
+      ],
+      "console_errors_logged": 0,
+      "screenshot_artifacts": [
+        "artifacts/screenshots/billing_loaded.png"
+      ]
+    }
+  ],
+  "accessibility_audit": {
+    "axe_violations": 0,
+    "aria_compliance_score": 100.0
+  }
+}
+```
+
+---
+
+## 10. Failure Modes & Escalation
+
+| Failure Mode | Detection Signal | Recovery Action |
+|:--|:--|:--|
+| **Element Not Attached / Stale DOM** | Playwright throws `TimeoutError` or `ElementHandle detached` | Upgrade selector to self-healing locator (`get_by_role` or `get_by_test_id`); add auto-retrying `expect(locator).to_be_visible()` |
+| **Cloudflare / Bot Detection Interception** | HTTP 403 or CAPTCHA frame detected in DOM | Switch to stealth user-agent; inject human mouse trajectory emulation; escalate to `@human-in-the-loop-governor` if 2FA/CAPTCHA persists |
+| **Hydration Mismatch / Slow SPA Render** | DOM elements clickable before React/Vue event listeners bind | Wait on network idle or framework-specific readiness flag (e.g. `window.__APP_READY__`) |
+| **Browser Zombie Process Leak** | Chromium processes remain after test run completion | Enforce context manager teardown (`with sync_playwright()`); run process reaper in teardown fixtures |
+| **Flaky Layout Shift on Screenshot** | Visual diff fails due to async image loading or fonts | Trigger `document.fonts.ready` wait and inject CSS `* { animation: none !important; transition: none !important; }` before capture |

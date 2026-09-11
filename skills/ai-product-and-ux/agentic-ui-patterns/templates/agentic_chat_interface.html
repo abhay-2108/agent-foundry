@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic AI Interface & Interaction Patterns</title>
+  <style>
+    :root {
+      --bg-primary: #090d16;
+      --bg-secondary: #131b2e;
+      --bg-card: rgba(26, 36, 61, 0.7);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.4);
+      --accent-indigo: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --font-mono: "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    header p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Message Thread */
+    .chat-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid var(--border-accent);
+      padding: 0.75rem 1.25rem;
+      border-radius: 1rem 1rem 0.25rem 1rem;
+      max-width: 80%;
+      font-size: 0.95rem;
+    }
+
+    .agent-message {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    /* Pattern 1 & 2: Reasoning Accordion */
+    .thought-accordion {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      font-size: 0.85rem;
+    }
+    .thought-header {
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.02);
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .thought-header:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .thought-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      color: #818cf8;
+    }
+    .thought-pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-indigo);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .thought-content {
+      padding: 1rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: none;
+    }
+    .thought-accordion.open .thought-content {
+      display: block;
+    }
+
+    /* Pattern 3: Generative UI Card */
+    .generative-card {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin: 0.5rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .metric-title { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .metric-value { font-size: 1.75rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Pattern 4: Diff Review Drawer Modal */
+    .diff-drawer {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 550px;
+      height: 100vh;
+      background: #0f172a;
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.7);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+    .diff-drawer.open { right: 0; }
+    .diff-header { display: flex; justify-content: space-between; align-items: center; }
+    .diff-view {
+      background: #090d16;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      overflow-y: auto;
+      flex: 1;
+      border: 1px solid var(--border-subtle);
+    }
+    .diff-line-add { color: #34d399; background: rgba(16, 185, 129, 0.1); display: block; padding: 2px 4px; }
+    .diff-line-del { color: #f87171; background: rgba(244, 63, 94, 0.1); display: block; padding: 2px 4px; }
+    .diff-actions { display: flex; gap: 0.75rem; }
+
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent-indigo); color: white; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-success { background: var(--accent-emerald); color: white; }
+    .btn-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+    /* Streaming text */
+    .stream-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Agentic UI Patterns & Frontend UX</h1>
+      <p>Interactive demonstration of token streaming, reasoning accordions, generative UI, and diff review drawers</p>
+    </header>
+
+    <div class="chat-card">
+      <div class="user-message">
+        Analyze recent revenue and optimize our checkout database query.
+      </div>
+
+      <div class="agent-message">
+        <!-- Pattern 2: Collapsible Reasoning Accordion -->
+        <div class="thought-accordion" id="reasoningAccordion">
+          <div class="thought-header" onclick="toggleThought()">
+            <div class="thought-pill">
+              <span class="thought-pulse"></span>
+              <span>Thinking Process (2.4s)</span>
+            </div>
+            <span id="accordionIcon">▼</span>
+          </div>
+          <div class="thought-content">
+            1. Auditing database table 'checkout_sessions'<br />
+            2. Found missing index on (tenant_id, created_at)<br />
+            3. Calculating 30-day MRR metrics and segment conversions<br />
+            4. Synthesizing migration script with zero-downtime concurrent index creation
+          </div>
+        </div>
+
+        <div class="stream-text" id="streamTarget">
+          I've analyzed the checkout performance. Here is the current financial metric and proposed index patch:
+        </div>
+
+        <!-- Pattern 3: Generative UI Card -->
+        <div class="generative-card">
+          <div>
+            <div class="metric-title">Checkout Conversion Rate</div>
+            <div class="metric-value">68.4%</div>
+          </div>
+          <div style="text-align: right;">
+            <span class="metric-badge">+4.2% MoM</span>
+            <div style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" onclick="openDiffDrawer()">Review SQL Diff</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pattern 4: Diff Review Drawer Modal -->
+  <div class="diff-drawer" id="diffDrawer">
+    <div class="diff-header">
+      <h3>Review Database Migration Diff</h3>
+      <button class="btn btn-danger" onclick="closeDiffDrawer()">✕ Close</button>
+    </div>
+    <div class="diff-view">
+      <span style="color: var(--text-muted);">--- schema/checkout.sql</span><br />
+      <span style="color: var(--text-muted);">+++ schema/checkout.sql (proposed)</span><br /><br />
+      <span>-- Add concurrent composite index</span><br />
+      <span class="diff-line-del">- CREATE INDEX idx_sessions ON checkout_sessions (created_at);</span>
+      <span class="diff-line-add">+ CREATE INDEX CONCURRENTLY idx_sessions_tenant_created</span>
+      <span class="diff-line-add">+ ON checkout_sessions (tenant_id, created_at DESC);</span>
+    </div>
+    <div class="diff-actions">
+      <button class="btn btn-success" style="flex: 1;" onclick="approveDiff()">Approve & Apply</button>
+      <button class="btn btn-danger" onclick="closeDiffDrawer()">Reject</button>
+    </div>
+  </div>
+
+  <script>
+    function toggleThought() {
+      const el = document.getElementById("reasoningAccordion");
+      el.classList.toggle("open");
+      const icon = document.getElementById("accordionIcon");
+      icon.textContent = el.classList.contains("open") ? "▲" : "▼";
+    }
+
+    function openDiffDrawer() {
+      document.getElementById("diffDrawer").classList.add("open");
+    }
+
+    function closeDiffDrawer() {
+      document.getElementById("diffDrawer").classList.remove("open");
+    }
+
+    function approveDiff() {
+      alert("Changes approved! Applying migration CONCURRENTLY.");
+      closeDiffDrawer();
+    }
+  </script>
+</body>
+</html>

@@ -3,12 +3,12 @@
 Multi-Agent Orchestration & Runtime Engine
 ------------------------------------------
 Discovers, loads, and coordinates autonomous agents defined in `agents/*/AGENT.md`
-and their bound skills in `skills/*/SKILL.md`.
+and their bound skills in `skills/**/SKILL.md` (recursive discovery).
 
 Supports:
 - Progressive disclosure: agent metadata loaded first, full persona loaded on dispatch.
 - Agent and Skill catalog discovery & validation.
-- Standardized inter-agent JSON message envelop routing.
+- Standardized inter-agent JSON message envelope routing.
 - Multi-agent dispatch topologies (Hierarchical, Router, Peer Review).
 """
 
@@ -87,7 +87,7 @@ class AgentRegistry:
         self._agents = self._load_agents()
 
     def _parse_frontmatter(self, file_path: Path) -> Dict[str, Any]:
-        """Parse YAML frontmatter using standard regex to avoid external yaml deps."""
+        """Parse YAML frontmatter including folded/block scalars and lists."""
         if not file_path.exists():
             return {}
         content = file_path.read_text(encoding="utf-8")
@@ -98,8 +98,21 @@ class AgentRegistry:
         yaml_text = match.group(1)
         data: Dict[str, Any] = {}
         current_list_key = None
+        current_multiline_key = None
+        multiline_buffer: List[str] = []
 
         for line in yaml_text.splitlines():
+            # Check indentation for multiline continuation
+            if current_multiline_key:
+                if line.startswith("  ") or line.startswith("\t"):
+                    multiline_buffer.append(line.strip())
+                    continue
+                else:
+                    # Multiline block ended
+                    data[current_multiline_key] = " ".join(multiline_buffer)
+                    current_multiline_key = None
+                    multiline_buffer = []
+
             line_str = line.strip()
             if not line_str or line_str.startswith("#"):
                 continue
@@ -115,33 +128,50 @@ class AgentRegistry:
                 key, rest = line_str.split(":", 1)
                 key = key.strip()
                 rest = rest.strip()
-                if not rest:
-                    # Possibly a list follows
+                current_list_key = None
+
+                if rest in (">-", "|-", ">", "|"):
+                    current_multiline_key = key
+                    multiline_buffer = []
+                elif not rest:
                     current_list_key = key
                     data[key] = []
                 else:
-                    current_list_key = None
                     val = rest.strip('"').strip("'")
                     data[key] = val
+
+        if current_multiline_key and multiline_buffer:
+            data[current_multiline_key] = " ".join(multiline_buffer)
 
         return data
 
     def _load_skills(self) -> Dict[str, Dict[str, str]]:
-        """Index all operational skills in skills/ directory."""
+        """Index all operational skills in skills/ directory recursively."""
         skills = {}
         if not self.skills_dir.exists():
             return skills
 
-        for entry in os.listdir(self.skills_dir):
-            skill_folder = self.skills_dir / entry
-            skill_md = skill_folder / "SKILL.md"
-            if skill_folder.is_dir() and skill_md.exists():
-                fm = self._parse_frontmatter(skill_md)
-                skills[entry] = {
-                    "name": fm.get("name", entry),
-                    "description": fm.get("description", "No description provided"),
-                    "path": str(skill_md),
-                }
+        for skill_md in sorted(self.skills_dir.rglob("SKILL.md")):
+            skill_folder = skill_md.parent
+            entry = skill_folder.name
+            fm = self._parse_frontmatter(skill_md)
+
+            category = "general"
+            if skill_folder.parent != self.skills_dir:
+                category = skill_folder.parent.name
+
+            skill_name = fm.get("name", entry)
+            skill_info = {
+                "name": skill_name,
+                "folder_name": entry,
+                "category": category,
+                "description": fm.get("description", "No description provided"),
+                "path": str(skill_md),
+            }
+            skills[skill_name] = skill_info
+            if entry != skill_name:
+                skills[entry] = skill_info
+
         return skills
 
     def _load_agents(self) -> Dict[str, AgentMetadata]:

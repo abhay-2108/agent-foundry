@@ -331,6 +331,73 @@ class PersistentAgentMemory:
                 results.append(row)
         return results
 
+    def search_episodes(self, keyword: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Search episodic log by keyword across action_type, agent_name, and payload content."""
+        like_pattern = f"%{keyword}%"
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, session_id, timestamp, agent_name, action_type,
+                       status, duration_ms, tokens_used
+                FROM episodic_log
+                WHERE action_type LIKE ?
+                   OR agent_name LIKE ?
+                   OR input_payload LIKE ?
+                   OR output_payload LIKE ?
+                ORDER BY id DESC LIMIT ?
+                """,
+                (like_pattern, like_pattern, like_pattern, like_pattern, limit)
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def export_all_facts(self) -> List[Dict[str, Any]]:
+        """Export all semantic facts as a list of dicts (without raw embeddings)."""
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, category, fact_key, fact_text, created_at, last_accessed, access_count "
+                "FROM semantic_facts ORDER BY category, fact_key"
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def export_session(self, session_id: str) -> Dict[str, Any]:
+        """Export all episodes for a session as a structured JSON object."""
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM episodic_log WHERE session_id = ? ORDER BY id ASC",
+                (session_id,)
+            ).fetchall()
+        episodes = []
+        for r in rows:
+            ep = dict(r)
+            for key in ("input_payload", "output_payload"):
+                try:
+                    ep[key] = json.loads(ep[key]) if ep[key] else {}
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            episodes.append(ep)
+        return {"session_id": session_id, "episode_count": len(episodes), "episodes": episodes}
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return database statistics: row counts, DB file size, unique sessions."""
+        db_size = os.path.getsize(self.db_path) if os.path.exists(self.db_path) else 0
+        with self._get_conn() as conn:
+            ep_count = conn.execute("SELECT COUNT(*) FROM episodic_log").fetchone()[0]
+            fact_count = conn.execute("SELECT COUNT(*) FROM semantic_facts").fetchone()[0]
+            session_count = conn.execute(
+                "SELECT COUNT(DISTINCT session_id) FROM episodic_log"
+            ).fetchone()[0]
+            oldest_row = conn.execute(
+                "SELECT MIN(timestamp) FROM episodic_log"
+            ).fetchone()[0]
+        return {
+            "db_path": self.db_path,
+            "db_size_kb": round(db_size / 1024, 2),
+            "total_episodes": ep_count,
+            "total_semantic_facts": fact_count,
+            "unique_sessions": session_count,
+            "oldest_episode_ts": oldest_row,
+        }
+
 
 # ======================================================================
 # Unified 3-Tier Agent Memory Facade
@@ -428,20 +495,56 @@ def run_self_test() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="3-Tier Agentic Memory Engine")
+    parser = argparse.ArgumentParser(
+        description="3-Tier Agentic Memory Engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python memory/memory_engine.py --test
+  python memory/memory_engine.py --stats
+  python memory/memory_engine.py --export-facts
+  python memory/memory_engine.py --query "how do we handle authentication?"
+  python memory/memory_engine.py --search-episodes "TASK_DECOMPOSITION"
+"""
+    )
     parser.add_argument("--test", action="store_true", help="Run automated self-tests")
     parser.add_argument("--query", help="Semantic query to test against long-term memory")
+    parser.add_argument("--stats", action="store_true", help="Print database statistics (row counts, size)")
+    parser.add_argument("--export-facts", action="store_true", help="Export all semantic facts as JSON")
+    parser.add_argument("--search-episodes", metavar="TERM", help="Search episodic log for keyword")
     args = parser.parse_args()
 
     if args.test or not sys.argv[1:]:
         return run_self_test()
 
+    engine = AgentMemoryEngine()
+
     if args.query:
-        engine = AgentMemoryEngine()
         hits = engine.recall_facts(args.query)
         print(f"\nResults for '{args.query}':")
         for h in hits:
             print(f"  [{h['similarity_score']}] ({h['category']}) {h['fact_text']}")
+        return 0
+
+    if args.stats:
+        stats = engine.persistent.get_stats()
+        print("\n  Memory Engine Statistics")
+        print("  " + "=" * 40)
+        for k, v in stats.items():
+            print(f"  {k:<30} {v}")
+        print()
+        return 0
+
+    if args.export_facts:
+        facts = engine.persistent.export_all_facts()
+        print(json.dumps(facts, indent=2))
+        return 0
+
+    if args.search_episodes:
+        episodes = engine.persistent.search_episodes(args.search_episodes)
+        print(f"\nEpisode search results for '{args.search_episodes}' ({len(episodes)} found):")
+        for ep in episodes:
+            print(f"  [{ep['id']}] {ep['agent_name']} | {ep['action_type']} | {ep['status']} | {ep['duration_ms']}ms")
         return 0
 
     return 0

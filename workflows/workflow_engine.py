@@ -36,6 +36,11 @@ class WorkflowDefinition:
     name: str
     description: str
     steps: List[WorkflowStep]
+    version: str = "1.0.0"
+    author: str = ""
+    estimated_duration_minutes: int = 0
+    global_inputs: Dict[str, Any] = field(default_factory=dict)
+    tags: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -82,7 +87,12 @@ class WorkflowEngine:
             id=data["id"],
             name=data["name"],
             description=data.get("description", ""),
-            steps=steps
+            steps=steps,
+            version=data.get("version", "1.0.0"),
+            author=data.get("author", ""),
+            estimated_duration_minutes=data.get("estimated_duration_minutes", 0),
+            global_inputs=data.get("global_inputs", {}),
+            tags=data.get("metadata", {}).get("tags", [])
         )
 
     def _topological_sort(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
@@ -114,8 +124,14 @@ class WorkflowEngine:
 
         return sorted_steps
 
-    def _resolve_template_vars(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Interpolates `{{steps.step_id.field}}` templates from previous step outputs."""
+    def _resolve_template_vars(
+        self,
+        inputs: Dict[str, Any],
+        outputs: Dict[str, Any],
+        global_inputs: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Interpolates `{{steps.step_id.field}}` and `{{global_inputs.key}}` templates."""
+        global_inputs = global_inputs or {}
         resolved = {}
         for k, v in inputs.items():
             if isinstance(v, str) and v.startswith("{{") and v.endswith("}}"):
@@ -126,6 +142,8 @@ class WorkflowEngine:
                     field_key = parts[2] if len(parts) > 2 else None
                     step_out = outputs.get(step_id, {})
                     resolved[k] = step_out.get(field_key) if field_key else step_out
+                elif parts[0] == "global_inputs" and len(parts) >= 2:
+                    resolved[k] = global_inputs.get(parts[1], v)
                 else:
                     resolved[k] = v
             else:
@@ -145,7 +163,9 @@ class WorkflowEngine:
 
         for step in sorted_steps:
             step_start = time.time()
-            resolved_inputs = self._resolve_template_vars(step.inputs, outputs_map)
+            resolved_inputs = self._resolve_template_vars(
+                step.inputs, outputs_map, global_inputs=workflow_def.global_inputs
+            )
             print(f"[*] Step [{step.step_id}] -> Assigned to [{step.agent}]")
             print(f"    Action: {step.action}")
             if step.depends_on:
@@ -185,35 +205,102 @@ class WorkflowEngine:
         )
 
 
+def _discover_all_workflows(engine: WorkflowEngine) -> List[Path]:
+    """Recursively find all workflow.json files in the workflows directory."""
+    return sorted(engine.workflows_dir.rglob("workflow.json"))
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Multi-Agent Declarative Workflow Engine")
-    parser.add_argument("--test", action="store_true", help="Test all workflows in workflows/ directory")
+    parser = argparse.ArgumentParser(
+        description="Multi-Agent Declarative Workflow Engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python workflows/workflow_engine.py --list
+  python workflows/workflow_engine.py --validate-all
+  python workflows/workflow_engine.py --run workflows/deep-research/workflow.json
+  python workflows/workflow_engine.py --run workflows/feature-factory/workflow.json --json
+"""
+    )
+    parser.add_argument("--test", action="store_true", help="Execute all workflows (smoke test)")
+    parser.add_argument("--validate-all", action="store_true", help="Validate all workflow JSONs without executing")
+    parser.add_argument("--list", action="store_true", help="List all available workflows with descriptions")
     parser.add_argument("--run", help="Path to workflow.json to execute")
+    parser.add_argument("--json", action="store_true", help="Output execution results as JSON")
     args = parser.parse_args()
 
     engine = WorkflowEngine()
 
-    if args.test or not sys.argv[1:]:
-        print("[*] Auditing all workflow definitions in workflows/...")
-        wf_dir = engine.workflows_dir
-        found = 0
-        for root, _, files in os.walk(wf_dir):
-            if "workflow.json" in files:
-                wf_path = Path(root) / "workflow.json"
-                print(f"\n---> Testing: {wf_path.relative_to(engine.root)}")
-                wf_def = engine.load_workflow(wf_path)
-                res = engine.execute_workflow(wf_def)
-                assert res.status == "SUCCESS"
-                found += 1
+    # ── List mode ────────────────────────────────────────────────────────────
+    if args.list:
+        wf_paths = _discover_all_workflows(engine)
+        print(f"\n  Available Workflows ({len(wf_paths)} found)\n  {'='*50}")
+        for p in wf_paths:
+            try:
+                wf = engine.load_workflow(p)
+                tags = ', '.join(wf.tags) if wf.tags else 'none'
+                print(f"  [{wf.id}]")
+                print(f"    Name    : {wf.name}")
+                print(f"    Steps   : {len(wf.steps)}")
+                print(f"    Est.    : {wf.estimated_duration_minutes} min")
+                print(f"    Tags    : {tags}")
+                print(f"    Path    : {p.relative_to(engine.root)}")
+                print()
+            except Exception as e:
+                print(f"  [ERROR] {p}: {e}")
+        return 0
 
+    # ── Validate-all mode ────────────────────────────────────────────────────
+    if args.validate_all:
+        wf_paths = _discover_all_workflows(engine)
+        errors: List[str] = []
+        print(f"[*] Validating {len(wf_paths)} workflow definition(s)...\n")
+        for p in wf_paths:
+            try:
+                wf = engine.load_workflow(p)
+                # Validate: topological sort (detects cycles and missing deps)
+                engine._topological_sort(wf.steps)
+                # Validate: all step_ids are unique
+                ids = [s.step_id for s in wf.steps]
+                if len(ids) != len(set(ids)):
+                    errors.append(f"{p}: Duplicate step_ids found: {ids}")
+                else:
+                    print(f"  [OK] {wf.id} ({len(wf.steps)} steps, no cycles, no missing deps)")
+            except Exception as e:
+                errors.append(f"{p}: {e}")
+                print(f"  [ERR] {p}: {e}")
+        print()
+        if errors:
+            print(f"[!] {len(errors)} validation error(s) found.")
+            return 1
+        print(f"[+] ALL {len(wf_paths)} WORKFLOW DEFINITIONS VALID!\n")
+        return 0
+
+    # ── Test / smoke-execute mode ─────────────────────────────────────────────
+    if args.test or (not args.run and not args.list and not args.validate_all):
+        wf_paths = _discover_all_workflows(engine)
+        print("[*] Smoke-executing all workflow definitions...")
+        found = 0
+        for p in wf_paths:
+            print(f"\n---> Testing: {p.relative_to(engine.root)}")
+            wf_def = engine.load_workflow(p)
+            res = engine.execute_workflow(wf_def)
+            assert res.status == "SUCCESS"
+            found += 1
         print(f"\n[+] ALL {found} WORKFLOW DEFINITIONS VERIFIED & EXECUTED CLEANLY!\n")
         return 0
 
+    # ── Single workflow run ───────────────────────────────────────────────────
     if args.run:
         wf_path = Path(args.run)
+        if not wf_path.exists():
+            print(f"Error: Workflow file not found: {args.run}", file=sys.stderr)
+            return 1
         wf_def = engine.load_workflow(wf_path)
-        engine.execute_workflow(wf_def)
-        return 0
+        record = engine.execute_workflow(wf_def)
+        if args.json:
+            print(json.dumps(asdict(record), indent=2))
+        return 0 if record.status == "SUCCESS" else 1
 
     return 0
 

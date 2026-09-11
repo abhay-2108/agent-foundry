@@ -1,0 +1,46 @@
+{
+  "$schema": "https://qdrant.tech/documentation/concepts/collections/",
+  "collection_name": "production_enterprise_knowledge",
+  "vectors": {
+    "size": 1536,
+    "distance": "Cosine",
+    "on_disk": false
+  },
+  "hnsw_config": {
+    "m": 32,
+    "ef_construct": 128,
+    "full_scan_threshold": 10000,
+    "max_indexing_threads": 4,
+    "on_disk": false
+  },
+  "quantization_config": {
+    "scalar": {
+      "type": "int8",
+      "quantile": 0.99,
+      "always_ram": true
+    }
+  },
+  "optimizers_config": {
+    "deleted_threshold": 0.2,
+    "vacuum_min_vector_number": 1000,
+    "default_segment_number": 4,
+    "max_segment_size": 200000,
+    "memmap_threshold": 50000,
+    "indexing_threshold": 20000,
+    "flush_interval_sec": 5
+  },
+  "payload_indexes": [
+    {
+      "field_name": "tenant_id",
+      "field_schema": "keyword"
+    },
+    {
+      "field_name": "access_tier",
+      "field_schema": "keyword"
+    },
+    {
+      "field_name": "created_timestamp",
+      "field_schema": "integer"
+    }
+  ]
+}

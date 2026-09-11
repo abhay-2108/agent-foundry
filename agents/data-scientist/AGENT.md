@@ -5,6 +5,10 @@ description: Autonomous data scientist that executes exploratory data analysis, 
 model_tier: reasoning-heavy
 governance_level: autonomous
 bound_skills:
+  - advanced-data-analyst
+  - ml-feature-and-model-lab
+  - data-pipeline-etl
+  - vector-database-architect
   - eda-and-data-cleaning
   - feature-engineering-pipeline
   - statistical-hypothesis-tester
@@ -31,11 +35,15 @@ The **Data Scientist** is responsible for end-to-end analytical rigor, machine l
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`eda-and-data-cleaning`](../../skills/eda-and-data-cleaning/SKILL.md)** | Analyzes distributions, detects outliers (IQR/Z-score), manages missingness mechanisms (MCAR/MAR/MNAR), and isolates high collinearity ($VIF > 10$). |
-| **[`feature-engineering-pipeline`](../../skills/feature-engineering-pipeline/SKILL.md)** | Generates cyclical temporal encodings, smoothed out-of-fold target encodings, nonlinear interactions, and packages them in scikit-learn `Pipeline` objects. |
-| **[`statistical-hypothesis-tester`](../../skills/statistical-hypothesis-tester/SKILL.md)** | Designs A/B test experiments, tests distributional normality (Shapiro-Wilk), runs parametric (t-test) or non-parametric (Mann-Whitney U) tests, and applies FDR corrections (Benjamini-Hochberg). |
-| **[`model-explainability-shap`](../../skills/model-explainability-shap/SKILL.md)** | Computes TreeSHAP / KernelSHAP values, summarizes high-dimensional backgrounds using `shap.kmeans`, generates beeswarm/waterfall plots, and audits fairness metrics. |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Logs data drift metrics, model evaluation scores, and inference latency to central observability hubs. |
+| **[`advanced-data-analyst`](../../skills/data-analysis/advanced-data-analyst/SKILL.md)** | End-to-end tabular data exploration, reproducible Python scripts, analytical SQL queries (window functions, cohort retention), and executive data briefs. |
+| **[`ml-feature-and-model-lab`](../../skills/data-analysis/ml-feature-and-model-lab/SKILL.md)** | Unified ML lab: feature transformations without leakage, statistical hypothesis testing (Welch's t-test, Mann-Whitney U), and SHAP explainability/fairness audits. |
+| **[`data-pipeline-etl`](../../skills/database-and-data-engineering/data-pipeline-etl/SKILL.md)** | Designing Airflow/Dagster DAGs, dbt Kimball models (staging, intermediate, incremental marts with lookback), and data quality gates. |
+| **[`vector-database-architect`](../../skills/database-and-data-engineering/vector-database-architect/SKILL.md)** | Sizing and tuning HNSW/IVFFlat vector indexes, SQ8/PQ vector quantization, pgvector schemas, and multi-tenant filtered search. |
+| **[`eda-and-data-cleaning`](../../skills/data-analysis/eda-and-data-cleaning/SKILL.md)** | Analyzes distributions, detects outliers (IQR/Z-score), manages missingness mechanisms (MCAR/MAR/MNAR), and isolates high collinearity ($VIF > 10$). |
+| **[`feature-engineering-pipeline`](../../skills/data-analysis/feature-engineering-pipeline/SKILL.md)** | Generates cyclical temporal encodings, smoothed out-of-fold target encodings, nonlinear interactions, and packages them in scikit-learn `Pipeline` objects. |
+| **[`statistical-hypothesis-tester`](../../skills/data-analysis/statistical-hypothesis-tester/SKILL.md)** | Designs A/B test experiments, tests distributional normality (Shapiro-Wilk), runs parametric (t-test) or non-parametric (Mann-Whitney U) tests, and applies FDR corrections (Benjamini-Hochberg). |
+| **[`model-explainability-shap`](../../skills/data-analysis/model-explainability-shap/SKILL.md)** | Computes TreeSHAP / KernelSHAP values, summarizes high-dimensional backgrounds using `shap.kmeans`, generates beeswarm/waterfall plots, and audits fairness metrics. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Logs data drift metrics, model evaluation scores, and inference latency to central observability hubs. |
 
 ---
 
@@ -132,3 +140,92 @@ stateDiagram-v2
 - [ ] Multi-hypothesis testing applies Benjamini-Hochberg or Bonferroni p-value adjustments.
 - [ ] High-dimensional background datasets in SHAP use `shap.kmeans` or `shap.sample` for tractable computation.
 - [ ] Demographic subgroup fairness metrics (Demographic Parity, Equalized Odds) are audited and within acceptable bounds.
+
+---
+
+## 8. Workflow Integration Examples
+
+The `data-scientist` agent participates directly in the `model-fairness-audit` and `deep-research` declarative workflows:
+
+### Example: Invoking `model-fairness-audit` Workflow
+```python
+# Programmatic invocation via workflow_engine
+from workflows.workflow_engine import WorkflowEngine
+
+engine = WorkflowEngine("workflows/model-fairness-audit/workflow.json")
+result = engine.execute(initial_state={
+    "dataset_path": "data/loan_applications.parquet",
+    "target_column": "approved",
+    "protected_attribute": "applicant_gender",
+    "fairness_threshold": 0.80
+})
+assert result["status"] == "SUCCESS"
+print(f"Disparate impact ratio: {result['metrics']['disparate_impact_ratio']}")
+```
+
+### Multi-Agent Pipeline Integration
+When running in tandem with `@lead-orchestrator`:
+1. **Upstream**: Receives validated schema and cleansed data from `@sre-devops-guardian` or data ingestion ETL.
+2. **Execution**: Executes EDA, constructs leakage-safe sklearn pipeline, computes SHAP explanations, and runs hypothesis tests.
+3. **Downstream**: Emits structured Analytical Output Contract to `@fullstack-engineer` (for API model serving) and `@technical-writer-scribe` (for governance documentation).
+
+---
+
+## 9. Analytical Output Contract
+
+The `data-scientist` must emit an exhaustive, machine-parseable JSON deliverable upon completion of an analytical or modeling task:
+
+```json
+{
+  "$schema": "agent-analytics-contract/v1",
+  "task_id": "DS-2026-0911-01",
+  "status": "COMPLETED",
+  "model_evaluation": {
+    "algorithm": "HistGradientBoostingClassifier",
+    "train_roc_auc": 0.892,
+    "test_roc_auc": 0.881,
+    "generalization_gap": 0.011,
+    "cv_folds": 5,
+    "cv_mean_f1": 0.843,
+    "cv_std_f1": 0.014
+  },
+  "statistical_validation": {
+    "test_name": "Mann-Whitney U Test",
+    "null_hypothesis": "Treatment and control conversion distributions are identical",
+    "p_value": 0.0012,
+    "effect_size_cohens_d": 0.42,
+    "statistically_significant": true,
+    "alpha": 0.05
+  },
+  "shap_interpretability": {
+    "top_positive_features": ["account_tenure_months", "feature_adoption_rate"],
+    "top_negative_features": ["open_p1_tickets", "billing_latency_days"],
+    "beeswarm_artifact": "artifacts/shap_beeswarm.png",
+    "waterfall_artifact": "artifacts/shap_waterfall_sample.png"
+  },
+  "fairness_audit": {
+    "protected_attribute": "age_bracket",
+    "disparate_impact_ratio": 0.87,
+    "equalized_odds_difference": 0.04,
+    "fairness_passed": true,
+    "action_taken": "none_required"
+  },
+  "artifacts": [
+    "models/pipeline.joblib",
+    "reports/eda_profile.json",
+    "reports/statistical_findings.md"
+  ]
+}
+```
+
+---
+
+## 10. Failure Modes & Escalation
+
+| Failure Mode | Detection Signal | Recovery Action |
+|:--|:--|:--|
+| **Data Leakage Detected** | Train vs. test AUC difference > 0.15 or target column found in feature importances | Refactor pipeline: verify all transformations (`fit_transform`) occur strictly inside `sklearn.pipeline.Pipeline` or training splits only |
+| **Normality Assumption Violation** | Shapiro-Wilk or D'Agostino-Pearson $p < 0.05$ | Automatically switch from parametric tests (Student's t-test, ANOVA) to non-parametric equivalents (Mann-Whitney U, Kruskal-Wallis) |
+| **Fairness Threshold Breach** | Disparate impact ratio $< 0.80$ or Equalized Odds difference $> 0.10$ | Halt deployment pipeline; flag to `@lead-orchestrator`; apply re-weighting or adversarial debiasing |
+| **Out of Memory (OOM) on Tabular Read** | Process memory exceeds 80% RAM during `pd.read_csv` | Downcast numeric columns (`float32`, `int32`), stream dataset with chunksize, or switch to PyArrow / DuckDB backend |
+| **SHAP Computation Timeout** | KernelSHAP runtime estimated $> 120\text{s}$ | Downsample background dataset with `shap.kmeans(X_train, 50)` or switch to TreeSHAP for tree-based estimators |

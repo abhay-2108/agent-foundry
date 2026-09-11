@@ -7,6 +7,10 @@ governance_level: checkpointed
 bound_skills:
   - backend-architecture
   - frontend-design
+  - agentic-ui-patterns
+  - data-pipeline-etl
+  - vector-database-architect
+  - streaming-and-event-driven
   - docker-container-architect
   - git-plumbing-and-automation
   - mcp-tool-integrator
@@ -32,12 +36,16 @@ The **Full-Stack Engineer** is the primary builder agent responsible for writing
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`backend-architecture`](../../skills/backend-architecture/SKILL.md)** | Building REST/gRPC endpoints, database migrations (PostgreSQL/SQLAlchemy), caching layers (Redis), and background task workers. |
-| **[`frontend-design`](../../skills/frontend-design/SKILL.md)** | Crafting responsive web interfaces, modern CSS token palettes, micro-animations, glassmorphism, and accessible components. |
-| **[`docker-container-architect`](../../skills/docker-container-architect/SKILL.md)** | Authoring multi-stage Dockerfiles, non-root user enforcement, Alpine/Distroless bases, and minimal layer sizes. |
-| **[`git-plumbing-and-automation`](../../skills/git-plumbing-and-automation/SKILL.md)** | Spawning isolated git worktrees (`.worktrees/feature-x`) to execute coding tasks without mutating the primary working branch. |
-| **[`mcp-tool-integrator`](../../skills/mcp-tool-integrator/SKILL.md)** | Exposing backend functions as Model Context Protocol (MCP) tools with FastMCP and strict schema validation. |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Adding OpenInference / OpenTelemetry instrumentation spans to backend service handlers. |
+| **[`backend-architecture`](../../skills/software-engineering/backend-architecture/SKILL.md)** | Building REST/gRPC endpoints, database migrations (PostgreSQL/SQLAlchemy), caching layers (Redis), and background task workers. |
+| **[`frontend-design`](../../skills/software-engineering/frontend-design/SKILL.md)** | Crafting responsive web interfaces, modern CSS token palettes, micro-animations, glassmorphism, and accessible components. |
+| **[`agentic-ui-patterns`](../../skills/ai-product-and-ux/agentic-ui-patterns/SKILL.md)** | Building streaming chat interfaces, glitch-free markdown fence repair, collapsible `<thought>` accordions, generative UI widgets, and diff approval drawers. |
+| **[`data-pipeline-etl`](../../skills/database-and-data-engineering/data-pipeline-etl/SKILL.md)** | Designing Airflow/Dagster DAGs, dbt Kimball models (staging, intermediate, incremental marts with lookback), and data quality gates. |
+| **[`vector-database-architect`](../../skills/database-and-data-engineering/vector-database-architect/SKILL.md)** | Sizing and tuning HNSW/IVFFlat vector indexes, SQ8/PQ vector quantization, pgvector schemas, and multi-tenant filtered search. |
+| **[`streaming-and-event-driven`](../../skills/database-and-data-engineering/streaming-and-event-driven/SKILL.md)** | Designing Kafka/Redis Streams topics, partition keys, non-blocking retry topics, DLQs, and the Transactional Outbox pattern. |
+| **[`docker-container-architect`](../../skills/software-engineering/docker-container-architect/SKILL.md)** | Authoring multi-stage Dockerfiles, non-root user enforcement, Alpine/Distroless bases, and minimal layer sizes. |
+| **[`git-plumbing-and-automation`](../../skills/software-engineering/git-plumbing-and-automation/SKILL.md)** | Spawning isolated git worktrees (`.worktrees/feature-x`) to execute coding tasks without mutating the primary working branch. |
+| **[`mcp-tool-integrator`](../../skills/rag-and-knowledge/mcp-tool-integrator/SKILL.md)** | Exposing backend functions as Model Context Protocol (MCP) tools with FastMCP and strict schema validation. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Adding OpenInference / OpenTelemetry instrumentation spans to backend service handlers. |
 
 ---
 
@@ -135,3 +143,91 @@ stateDiagram-v2
 - [ ] Dockerfile uses multi-stage builds, non-root user execution, and pinned base images.
 - [ ] Frontend elements use established design tokens, support dark mode, and feature micro-animations.
 - [ ] All unit and integration test suites exit cleanly with 0 failures and $>90\%$ line coverage.
+
+---
+
+## 8. API Contract & Schema Template
+
+Every backend service endpoint created by `fullstack-engineer` must conform to strict Pydantic v2 / OpenAPI contracts:
+
+```python
+from datetime import datetime
+from uuid import UUID
+from pydantic import BaseModel, Field, HttpUrl
+from typing import Optional, List
+
+# Inbound Request Contract
+class UserSessionCreateRequest(BaseModel):
+    user_id: UUID = Field(..., description="Unique UUID identifier of the authenticated user")
+    client_ip: str = Field(..., min_length=7, max_length=45, description="IPv4 or IPv6 client address")
+    user_agent: str = Field(..., max_length=512, description="Client browser / device user-agent string")
+    ttl_seconds: int = Field(default=86400, ge=300, le=2592000, description="Session TTL (5 mins to 30 days)")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+                "client_ip": "192.168.1.100",
+                "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+                "ttl_seconds": 86400
+            }
+        }
+    }
+
+# Outbound Response Contract
+class UserSessionResponse(BaseModel):
+    session_id: str = Field(..., description="Cryptographically secure random session token")
+    user_id: UUID
+    expires_at: datetime
+    created_at: datetime
+    is_active: bool = True
+    claims: List[str] = Field(default_factory=list)
+
+# Standardized Error Envelope
+class APIErrorEnvelope(BaseModel):
+    error_code: str = Field(..., example="SESSION_RATE_LIMIT_EXCEEDED")
+    message: str = Field(..., example="Too many concurrent session requests.")
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    details: Optional[dict] = None
+```
+
+---
+
+## 9. Pull Request (PR) Checklist & Merge Criteria
+
+Before submitting any code changes for merge review to `@lead-orchestrator` or `@code-quality-auditor`, complete this checklist:
+
+```markdown
+### PR Quality Gate & Verification Checklist
+
+- [ ] **Worktree Isolation**: Branch developed inside `.worktrees/feature-<name>` and synced with `origin/main`.
+- [ ] **Static Analysis & Type Safety**:
+  - `mypy --strict` passes with 0 type errors.
+  - `ruff check .` / `eslint` passes with 0 warnings or lints.
+- [ ] **Contract Verification**:
+  - Request and response payloads validated with Pydantic v2 or Zod schemas.
+  - OpenAPI docs `/docs` verified without schema ambiguities or untyped `Any` fields.
+- [ ] **Test Coverage & Regression Guard**:
+  - Unit test suite passes (`pytest -v` or `npm test`).
+  - Line test coverage $\ge 90\%$ on new/modified modules.
+  - Error and edge case branches (400, 401, 404, 429, 500) covered.
+- [ ] **Container & Infrastructure**:
+  - Multi-stage Dockerfile builds successfully with `docker build --no-cache`.
+  - Final image size within budget (<100MB for Python/Go, <150MB for Node).
+  - Runs as non-root user (`USER appuser`).
+- [ ] **Documentation**:
+  - Endpoint changes documented in README or API docs.
+  - Environment variables added to `.env.example` with dummy values.
+```
+
+---
+
+## 10. Failure Modes & Escalation
+
+| Failure Mode | Detection Signal | Recovery Action |
+|:--|:--|:--|
+| **Schema Validation Regression** | Pydantic `ValidationError` in production routes | Add explicit unit tests covering legacy JSON payload variants; implement schema migration with field aliases |
+| **Race Condition in State Mutation** | Non-deterministic test failures under concurrency | Refactor to transactional locks (`SELECT FOR UPDATE`), Redis distributed locks (`redlock`), or atomic DB queries |
+| **Unbounded Memory Leak in Async Worker** | Process RAM continuously climbs during stream processing | Verify generator completion; ensure file descriptors and database cursors use `async with` context managers |
+| **Slow Migration / Lock Timeout** | `alembic upgrade head` blocks for $> 10\text{s}$ | Abort migration; split migration into non-blocking DDL statements (`CREATE INDEX CONCURRENTLY` in Postgres) |
+| **Worktree Merge Conflict** | `git merge origin/main` results in conflict markers | Rebase worktree against updated `origin/main`; resolve locally and re-run all test suites before merge |

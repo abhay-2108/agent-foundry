@@ -133,3 +133,64 @@ stateDiagram-v2
 - [ ] Liveness and readiness health checks are implemented and respond with HTTP 200 within 500ms.
 - [ ] Graceful shutdown hooks handle `SIGTERM` with explicit draining intervals.
 - [ ] Git worktrees are safely cleaned up and uncommitted temp files removed.
+
+---
+
+## 8. SLO / SLI Specification & Error Budget Policies
+
+Every production service governed by `sre-devops-guardian` defines explicit Service Level Objectives (SLOs) and Service Level Indicators (SLIs):
+
+| Metric Tier | Indicator (SLI) | Target (SLO) | Window | Error Budget Action on Breach |
+|:---|:---|:---|:---|:---|
+| **Availability** | $\frac{\text{Successful Requests (non-5xx)}}{\text{Total Requests}}$ | $\ge 99.95\%$ | Rolling 30d | Freeze non-critical feature deploys; divert sprint to stability |
+| **Latency (P95)** | Round-trip duration from ingress to response | $\le 250\text{ms}$ | Rolling 7d | Auto-scale replica pool; trace slow query spans |
+| **Latency (P99)** | Round-trip duration from ingress to response | $\le 800\text{ms}$ | Rolling 7d | Trigger deep database connection pool and cache audit |
+| **Ingress Error Rate** | Percentage of requests returning HTTP 500/502/503 | $< 0.05\%$ | Rolling 1h | Automated traffic reroute to canary/fallback cluster |
+| **MTTR (Mean Time to Recovery)** | Outage detection to verified green health | $\le 15\text{ minutes}$ | Per incident | Post-mortem review mandatory within 48h |
+
+---
+
+## 9. Incident Triage Runbook & Post-Mortem Format
+
+Upon production incident detection (alert firing or health check failure), execute this exact runbook:
+
+```markdown
+# Incident Runbook & Post-Mortem Template
+
+## 1. Incident Overview
+- **Incident ID**: INC-2026-0911-01
+- **Severity**: P1 - CRITICAL (Customer Facing Outage)
+- **Service Affected**: `payment-gateway`
+- **Time Detected**: 2026-09-11T14:02:10Z
+- **Time Resolved**: 2026-09-11T14:14:45Z (MTTR: 12m 35s)
+- **Incident Commander**: `@sre-devops-guardian`
+
+## 2. Root Cause Analysis (5 Whys)
+1. **Why did the service fail?** Health probes timed out returning HTTP 503.
+2. **Why did health probes time out?** Database connection pool was exhausted at 100/100 connections.
+3. **Why was the pool exhausted?** A new migration query omitted an index on `tenant_id`.
+4. **Why was the index omitted?** Migration script was merged without automated EXPLAIN query check.
+5. **Why was EXPLAIN check missing?** CI pipeline lacked pre-merge query performance gate.
+
+## 3. Mitigation & Recovery Steps Executed
+1. `git worktree add -b incident-fix deploy/hotfix origin/main`
+2. Rolled back deployed container tag from `v2.4.1` to `v2.4.0` via Kubernetes rollout undo.
+3. Verified `/healthz` returned HTTP 200 in 14ms across all 6 replica pods.
+4. Cleaned up hotfix worktree and released incident lock.
+
+## 4. Corrective Action Items
+- [ ] Add `EXPLAIN ANALYZE` linting step in CI for all SQL migrations (Owner: `@backend-architecture`, Due: 24h)
+- [ ] Implement query timeout ceiling (max 3000ms) on DB connection pool (Owner: `@sre-devops-guardian`, Due: 48h)
+```
+
+---
+
+## 10. Failure Modes & Escalation
+
+| Failure Mode | Detection Signal | Recovery Action |
+|:--|:--|:--|
+| **Container CrashLoopBackOff** | Pod restarts > 3 times within 120s | Inspect `kubectl logs --previous`; check missing env vars or failing health probe port; trigger immediate rollback to previous image tag |
+| **Error Budget Burn Rate Spike** | 1-hour error budget burn rate exceeds $14.4\times$ | Halt all ongoing CI/CD deploys immediately; alert On-Call Lead; initiate traffic shedding or circuit breaker trips |
+| **Cascading Database Connection Exhaustion** | Pool utilization $> 95\%$ across all service pods | Engage read-replica routing; rate limit ingress traffic; activate backpressure queue on background workers |
+| **Orphaned Git Worktree Locks** | Git commands fail with `.git/worktrees/<name>/locked` | Execute `git worktree prune`; verify no orphaned processes holding file handles before unlocking |
+| **Base Image Vulnerability Block** | Trivy scan detects unpatched CRITICAL CVE in base layer | Update base image tag to latest patch release; if unavailable, switch to Alpine or Chainguard Wolfi minimal image |
