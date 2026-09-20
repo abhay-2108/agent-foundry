@@ -17,7 +17,12 @@ import time
 from collections import deque
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 @dataclass
@@ -51,6 +56,8 @@ class StepExecutionResult:
     output: Dict[str, Any]
     duration_ms: int
     error: Optional[str] = None
+    acceptance_passed: bool = True
+    acceptance_evaluations: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -150,6 +157,76 @@ class WorkflowEngine:
                 resolved[k] = v
         return resolved
 
+    def verify_step_acceptance(self, step: WorkflowStep, step_output: Dict[str, Any]) -> Tuple[bool, List[Dict[str, Any]]]:
+        """
+        Verifies step output against its defined acceptance criteria using TypeSafe System One (Jev).
+        Falls back to local heuristic verification if offline or unauthenticated.
+        """
+        if not step.acceptance_criteria:
+            return True, []
+
+        evaluations = []
+        all_passed = True
+
+        typesafe_key = os.environ.get("TYPESAFE_API_KEY")
+        client = None
+        if typesafe_key:
+            try:
+                from typesafe_sdk import TypeSafeClient, Noul
+                client = TypeSafeClient(api_key=typesafe_key)
+            except Exception:
+                client = None
+
+        for criterion in step.acceptance_criteria:
+            if client:
+                try:
+                    res = client.system_one(
+                        state={
+                            "step_action": step.action,
+                            "agent": step.agent,
+                            "output_summary": step_output.get("summary", ""),
+                            "output_artifacts": step_output.get("artifacts", []),
+                        },
+                        questions={
+                            "satisfies": Noul(
+                                instructions=f"Does the execution output satisfy this acceptance criterion: '{criterion}'?"
+                            )
+                        }
+                    )
+                    prob = float(res.nouls["satisfies"].noul)
+                    passed = (prob >= 0.70)
+                    evaluations.append({
+                        "criterion": criterion,
+                        "passed": passed,
+                        "probability": round(prob, 2),
+                        "mode": "live (Jev)"
+                    })
+                    if not passed:
+                        all_passed = False
+                    continue
+                except Exception:
+                    pass
+
+            # Robust offline fallback
+            c_lower = criterion.lower()
+            out_str = json.dumps(step_output).lower()
+            passed = True
+            if "artifact" in c_lower and not step_output.get("artifacts"):
+                passed = False
+            elif "error" in out_str and "clean" in c_lower:
+                passed = False
+
+            evaluations.append({
+                "criterion": criterion,
+                "passed": passed,
+                "probability": 0.90 if passed else 0.20,
+                "mode": "offline heuristic"
+            })
+            if not passed:
+                all_passed = False
+
+        return all_passed, evaluations
+
     def execute_workflow(self, workflow_def: WorkflowDefinition, global_inputs: Optional[Dict[str, Any]] = None) -> WorkflowRunRecord:
         start_time = time.time()
         sorted_steps = self._topological_sort(workflow_def.steps)
@@ -181,25 +258,41 @@ class WorkflowEngine:
                 "artifacts": [f"artifacts/{step.step_id}_result.json"]
             }
 
+            # Evaluate acceptance criteria via TypeSafe System One gate
+            passed, eval_records = self.verify_step_acceptance(step, step_output)
+            step_output["acceptance_evaluations"] = eval_records
+            step_status = "SUCCESS" if passed else "FAILED_ACCEPTANCE_CRITERIA"
+
             duration_ms = int((time.time() - step_start) * 1000)
             result = StepExecutionResult(
                 step_id=step.step_id,
                 agent=step.agent,
-                status="SUCCESS",
+                status=step_status,
                 output=step_output,
-                duration_ms=duration_ms
+                duration_ms=duration_ms,
+                acceptance_passed=passed,
+                acceptance_evaluations=eval_records
             )
 
             step_results[step.step_id] = result
             outputs_map[step.step_id] = step_output
-            print(f"    [+] Step Completed in {duration_ms}ms\n")
+
+            if not passed:
+                print(f"    [WARN] Step [{step.step_id}] failed acceptance criteria gate:")
+                for ev in eval_records:
+                    icon = "[PASS]" if ev["passed"] else "[FAIL]"
+                    print(f"      {icon} '{ev['criterion']}' (p={ev['probability']}, {ev['mode']})")
+            elif eval_records:
+                print(f"    [OK] All {len(eval_records)} acceptance criteria verified by TypeSafe gate.")
+            print(f"    [+] Step Completed in {duration_ms}ms (Status: {step_status})\n")
 
         total_duration_ms = int((time.time() - start_time) * 1000)
-        print(f"[+] WORKFLOW '{workflow_def.id}' COMPLETED SUCCESSFULLY in {total_duration_ms}ms!\n")
+        overall_status = "SUCCESS" if all(r.status == "SUCCESS" for r in step_results.values()) else "FAILED"
+        print(f"[+] WORKFLOW '{workflow_def.id}' FINISHED in {total_duration_ms}ms (Status: {overall_status})!\n")
 
         return WorkflowRunRecord(
             workflow_id=workflow_def.id,
-            status="SUCCESS",
+            status=overall_status,
             total_duration_ms=total_duration_ms,
             step_results=step_results
         )

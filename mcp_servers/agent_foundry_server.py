@@ -18,6 +18,7 @@ import argparse
 import ast
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -37,6 +38,17 @@ from mcp_servers.code_sandbox_server import execute_python_code, run_shell_comma
 from mcp_servers.filesystem_server import SafeFilesystem
 from mcp_servers.hybrid_retriever_server import HybridSearchEngine
 
+# TypeSafe System One tools import
+typesafe_scripts_dir = str(REPO_ROOT / "skills" / "llm-engineering" / "typesafe-ai" / "scripts")
+if typesafe_scripts_dir not in sys.path:
+    sys.path.insert(0, typesafe_scripts_dir)
+try:
+    from typesafe_router import TypeSafeRouter
+    from typesafe_verifier import TypeSafeVerifier
+except Exception as e:
+    TypeSafeRouter = None
+    TypeSafeVerifier = None
+
 # MCP SDK import
 from mcp.server.fastmcp import FastMCP
 
@@ -44,14 +56,17 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("agent-foundry")
 
 # Global instances with robust fallbacks
-GLOBAL_DB_PATH = os.environ.get(
-    "AGENT_FOUNDRY_GLOBAL_DB",
-    str(Path.home() / ".gemini" / "agent_foundry_memory.db")
-)
-memory_engine = AgentMemoryEngine(session_id="global_session", db_path=GLOBAL_DB_PATH)
+DEFAULT_LOCAL_DB = str(REPO_ROOT / ".memory" / "agent_foundry_memory.db")
+GLOBAL_DB_PATH = os.environ.get("AGENT_FOUNDRY_GLOBAL_DB", DEFAULT_LOCAL_DB)
+try:
+    memory_engine = AgentMemoryEngine(session_id="global_session", db_path=GLOBAL_DB_PATH)
+except Exception:
+    memory_engine = AgentMemoryEngine(session_id="global_session", db_path=DEFAULT_LOCAL_DB)
 workflow_engine = WorkflowEngine(workspace_root=REPO_ROOT)
 retriever_engine = HybridSearchEngine()
 fs_handler = SafeFilesystem(allowed_root=REPO_ROOT)
+typesafe_router = TypeSafeRouter() if TypeSafeRouter else None
+typesafe_verifier = TypeSafeVerifier() if TypeSafeVerifier else None
 
 
 # ======================================================================
@@ -202,16 +217,19 @@ def index_documents(documents_json: str) -> str:
 # ======================================================================
 
 @mcp.tool()
-def memory_record_fact(category: str, fact_key: str, fact_text: str) -> str:
+def memory_record_fact(category: str, fact_key: str, fact_text: str, verify_consistency: bool = True) -> str:
     """
     Stores or updates a durable semantic fact in Tier 3 Long-Term Memory.
+    Applies TypeSafe / Jev consistency verification to guard against memory poisoning and contradictions.
     Persists across sessions in the global SQLite database.
     """
     try:
-        memory_engine.remember_fact(category=category, key=fact_key, fact=fact_text)
+        res = memory_engine.remember_fact(category=category, key=fact_key, fact=fact_text, verify_consistency=verify_consistency)
+        is_disputed = res.get("disputed", False) if isinstance(res, dict) else False
         return json.dumps({
-            "status": "SUCCESS",
-            "message": f"Fact '{fact_key}' saved in category '{category}'.",
+            "status": "FLAGGED_DISPUTED" if is_disputed else "SUCCESS",
+            "message": f"Fact '{fact_key}' saved in category '{category}'" + (f" [DISPUTED: {res.get('dispute_reason')}]" if is_disputed else "."),
+            "verification": res,
             "db_path": memory_engine.persistent.db_path
         })
     except Exception as e:
@@ -219,12 +237,13 @@ def memory_record_fact(category: str, fact_key: str, fact_text: str) -> str:
 
 
 @mcp.tool()
-def memory_query_facts(query: str, top_k: int = 3) -> str:
+def memory_query_facts(query: str, top_k: int = 3, include_disputed: bool = False) -> str:
     """
     Searches Tier 3 Semantic Vector Memory using cosine similarity against local embeddings.
+    By default excludes poisoned/disputed facts unless include_disputed is True.
     """
     try:
-        facts = memory_engine.recall_facts(query=query, top_k=top_k)
+        facts = memory_engine.recall_facts(query=query, top_k=top_k, include_disputed=include_disputed)
         return json.dumps({
             "query": query,
             "matched_facts": facts,
@@ -371,6 +390,116 @@ def workflow_execute(workflow_id: str, parameters_json: str = "{}") -> str:
 
 
 # ======================================================================
+# 6. TypeSafe System One Tools
+# ======================================================================
+
+@mcp.tool()
+def typesafe_route_task(prompt: str, active_file: str = "") -> str:
+    """
+    Evaluates prompt state in ~100ms using TypeSafe System One (Jev) to return the
+    optimal specialist persona (@lead-orchestrator, @security-red-teamer, etc.),
+    recommended skill runbook, and task category.
+    """
+    if not typesafe_router:
+        return json.dumps({"status": "ERROR", "error": "TypeSafeRouter module unavailable."})
+    try:
+        decision = typesafe_router.route(prompt, active_file=active_file if active_file else None)
+        return json.dumps({
+            "status": "SUCCESS",
+            "prompt": decision.user_prompt,
+            "target_persona": decision.target_persona,
+            "target_skill": decision.target_skill,
+            "task_type": decision.task_type,
+            "needs_specialist": decision.needs_specialist,
+            "persona_confidence": decision.persona_confidence,
+            "skill_confidence": decision.skill_confidence,
+            "recommended_action": decision.recommended_action,
+            "mode": decision.mode
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "ERROR", "error": str(e)})
+
+
+@mcp.tool()
+def typesafe_verify_claim(claim: str, source_context: str) -> str:
+    """
+    Double-checks claims and generated code against source evidence using TypeSafe
+    System One. Returns calibrated support probability (0-100%), divergence severity
+    (none/minor/moderate/critical), and action (PASS, FLAG_FOR_REVIEW, REJECT_AND_RETRY).
+    """
+    if not typesafe_verifier:
+        return json.dumps({"status": "ERROR", "error": "TypeSafeVerifier module unavailable."})
+    try:
+        report = typesafe_verifier.verify(claim, source_context)
+        return json.dumps({
+            "status": "SUCCESS",
+            "claim": report.claim,
+            "is_faithful": report.is_faithful,
+            "support_probability": report.support_probability,
+            "support_status": report.support_status,
+            "severity_score": report.severity_score,
+            "severity_label": report.severity_label,
+            "recommended_action": report.recommended_action,
+            "explanation": report.explanation,
+            "mode": report.mode
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "ERROR", "error": str(e)})
+
+
+@mcp.tool()
+def typesafe_evaluate_risk(command_or_action: str) -> str:
+    """
+    Evaluates the destructive and security risk of a shell command, file modification,
+    or tool action on a 0-3 scale. Informs human-in-the-loop approval gates.
+    """
+    cmd_lower = command_or_action.lower()
+
+    critical_patterns = [
+        r"\brm\s+-(?:r|f|rf|fr)\b", r"\bdrop\s+database\b", r"\bdrop\s+table\b",
+        r"\btruncate\s+table\b", r"\bformat\s+[a-z]:\b", r"\bdel\s+/[fsq]\b",
+        r"\bcurl.*\|\s*(?:bash|sh)\b", r"\bkill\s+-9\b", r"\bchmod\s+777\b"
+    ]
+    is_critical = any(re.search(pat, cmd_lower) for pat in critical_patterns)
+
+    moderate_patterns = [
+        r"\bgit\s+reset\s+--hard\b", r"\bgit\s+push\b.*--force", r"\bpip\s+install\b",
+        r"\bnpm\s+install\b", r"\bdocker\s+system\s+prune\b"
+    ]
+    is_moderate = any(re.search(pat, cmd_lower) for pat in moderate_patterns)
+
+    if is_critical:
+        risk_score = 3.0
+        risk_level = "critical"
+        requires_approval = True
+        explanation = "Destructive command with potential for irreversible data loss or system compromise."
+    elif is_moderate:
+        risk_score = 2.0
+        risk_level = "moderate"
+        requires_approval = True
+        explanation = "State-altering operation affecting dependencies, git tree, or container state."
+    elif any(w in cmd_lower for w in ["write", "create", "touch", "mkdir", "git commit", "git checkout -b"]):
+        risk_score = 1.0
+        risk_level = "minor"
+        requires_approval = False
+        explanation = "Local constructive file or branch modification."
+    else:
+        risk_score = 0.0
+        risk_level = "safe"
+        requires_approval = False
+        explanation = "Read-only inspection or informational query."
+
+    return json.dumps({
+        "status": "SUCCESS",
+        "action": command_or_action,
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "requires_human_approval": requires_approval,
+        "explanation": explanation
+    }, indent=2)
+
+
+# ======================================================================
 # Server Runner & Self-Test
 # ======================================================================
 
@@ -386,7 +515,7 @@ def run_self_test() -> int:
 
     # 2. Memory engine test
     print("  -> Testing memory_record_fact and memory_query_facts tools...")
-    test_db = str(Path.home() / ".gemini" / "test_mcp_memory.db")
+    test_db = str(REPO_ROOT / ".memory" / "test_mcp_memory.db")
     test_mem = AgentMemoryEngine(session_id="test_session", db_path=test_db)
     test_mem.remember_fact("global_test", "antigravity_core", "Agent Foundry integrates seamlessly into Antigravity.")
     facts = test_mem.recall_facts("Antigravity integration", top_k=1)
@@ -411,6 +540,27 @@ def run_self_test() -> int:
     search_res = json.loads(hybrid_search("lightweight MCP"))
     assert search_res["results_count"] > 0
     print("     [OK] hybrid_search passed.")
+
+    # 5. TypeSafe System One tools test
+    print("  -> Testing TypeSafe FastMCP tools...")
+    route_res = json.loads(typesafe_route_task("Audit our endpoints for SQL injection"))
+    assert route_res["status"] == "SUCCESS"
+    assert route_res["target_persona"] == "security-red-teamer"
+    print(f"     [OK] typesafe_route_task passed (@{route_res['target_persona']}).")
+
+    verify_res = json.loads(typesafe_verify_claim(
+        "DuckDB supports columnar execution.",
+        "DuckDB is an in-process database supporting columnar execution."
+    ))
+    assert verify_res["status"] == "SUCCESS"
+    assert verify_res["recommended_action"] == "PASS"
+    print(f"     [OK] typesafe_verify_claim passed ({verify_res['recommended_action']}).")
+
+    risk_res = json.loads(typesafe_evaluate_risk("rm -rf /"))
+    assert risk_res["status"] == "SUCCESS"
+    assert risk_res["risk_level"] == "critical"
+    assert risk_res["requires_human_approval"] is True
+    print(f"     [OK] typesafe_evaluate_risk passed ({risk_res['risk_level']}).")
 
     print("\n[+] ALL AGENT FOUNDRY FASTMCP TESTS PASSED SUCCESSFULLY!")
     return 0

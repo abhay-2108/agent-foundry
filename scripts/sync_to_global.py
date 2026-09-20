@@ -4,11 +4,19 @@ sync_to_global.py — Synchronizes all skills, agents, workflows, configs, and c
 from the repository workspace to global installations for Antigravity and OpenCode.
 """
 
-import os
-import shutil
+import argparse
 import json
+import os
 import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
+
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 WORKSPACE = Path(r"P:\AIML Projects\Skills and Agents")
 GEMINI_DIR = Path(r"C:\Users\Abhay Tiwari\.gemini")
@@ -24,6 +32,38 @@ IGNORE_PATTERNS = shutil.ignore_patterns(
     ".git", ".memory", ".pytest_cache", "__pycache__", "*.pyc", 
     "*.db", "*.sqlite*", "scratch", "tmp", ".venv", "env", "node_modules"
 )
+
+
+def run_pre_sync_validations():
+    """
+    Executes automated test suites across all core modules before deploying to global dirs.
+    Guarantees that broken code or regressed tools are never synced to the ecosystem.
+    """
+    print("[*] 0. Running pre-sync verification suites...")
+    tests = [
+        ("Agent Foundry FastMCP Server", [sys.executable, str(WORKSPACE / "mcp_servers" / "agent_foundry_server.py"), "--test"]),
+        ("3-Tier Memory Engine & Poisoning Guardrails", [sys.executable, str(WORKSPACE / "memory" / "memory_engine.py"), "--test"]),
+        ("TypeSafe Tools Integration Suite", [sys.executable, str(WORKSPACE / "skills" / "llm-engineering" / "typesafe-ai" / "scripts" / "test_typesafe_tools.py")]),
+    ]
+    for name, cmd in tests:
+        print(f"    -> Verifying {name}...")
+        proc = subprocess.run(
+            cmd,
+            cwd=str(WORKSPACE),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace"
+        )
+        if proc.returncode != 0:
+            print(f"    [!] FAILED: {name} failed with exit code {proc.returncode}")
+            if proc.stdout:
+                print(proc.stdout)
+            if proc.stderr:
+                print(proc.stderr)
+            raise RuntimeError(f"Pre-sync validation failed on {name}. Aborting global sync.")
+        print(f"       [PASS] {name}")
+    print("    [+] All pre-sync validations passed successfully!\n")
 
 def sync_agent_foundry_global():
     print("[*] 1. Syncing workspace to global Agent Foundry (~/.gemini/agent-foundry)...")
@@ -119,17 +159,17 @@ You can embody or consult any of the 10 specialist personas on demand. When the 
 
 ---
 
-## 2. Thirty-Nine Globally Available Skills across 9 Domains
-All 39 skills are indexed globally under `~/.gemini/config/skills/`. Antigravity's progressive disclosure dynamically injects their runbooks when relevant:
-- **Orchestration (5)**: `multi-agent-orchestrator`, `plan-and-execute`, `human-in-the-loop-governor`, `session-handoff`, `agent-trajectory-evaluator`
+## 2. Forty-One Globally Available Skills across 9 Domains
+All 41 skills are indexed globally under `~/.gemini/config/skills/`. Antigravity's progressive disclosure dynamically injects their runbooks when relevant:
+- **Orchestration (6)**: `multi-agent-orchestrator`, `plan-and-execute`, `human-in-the-loop-governor`, `session-handoff`, `agent-trajectory-evaluator`, `get-shit-done`
 - **Software Engineering & Quality (6)**: `code-reviewer`, `bug-hunter`, `backend-architecture`, `frontend-design`, `docker-container-architect`, `git-plumbing-and-automation`
 - **Data Analysis & Modeling (4)**: `advanced-data-analyst`, `ml-feature-and-model-lab`, `eda-and-data-cleaning`, `model-explainability-shap`
 - **Database & Data Engineering (3)**: `data-pipeline-etl`, `vector-database-architect`, `streaming-and-event-driven`
-- **LLM Engineering & Evals (4)**: `llm-council`, `llm-evals-engineer`, `llm-observability`, `prompt-architect`
+- **LLM Engineering & Evals (5)**: `llm-council`, `llm-evals-engineer`, `llm-observability`, `prompt-architect`, `typesafe-ai`
 - **RAG & Knowledge (3)**: `agentic-rag-engineer`, `graph-rag-builder`, `mcp-tool-integrator`
 - **AI Security & Safety (3)**: `security-vulnerability-scanner`, `prompt-injection-red-teamer`, `guardrails-enforcer`
 - **AI Product & UX (2)**: `agentic-ui-patterns`, `executive-memo-architect`
-- **Writing & Research (4)**: `workspace-researcher`, `knowledge-capture`, `brainstorming`, `office-doc-engine`, `humanize-ai-text`
+- **Writing & Research (5)**: `workspace-researcher`, `knowledge-capture`, `brainstorming`, `office-doc-engine`, `human-writer`, `humanize-ai-text`
 - **Foundational Specialists**: `skill-creator`, `agent-memory-architect`, `statistical-hypothesis-tester`, `feature-engineering-pipeline`
 
 ---
@@ -163,8 +203,11 @@ The `"agent-foundry"` MCP server is registered globally in `mcp_config.json` and
 - `run_shell`: Safe shell command execution.
 - `read_file_safe`, `write_file_safe`, `list_directory_safe`: Workspace-bounded filesystem tools.
 - `hybrid_search`, `index_documents`: BM25 + Vector ranking tools.
-- `memory_record_fact`, `memory_query_facts`, `memory_log_episode`: Cross-project SQLite memory tools.
-- `workflow_list`, `workflow_execute`: Declarative multi-agent DAG runner.
+- `memory_record_fact`, `memory_query_facts`, `memory_log_episode`: Cross-project SQLite memory tools with TypeSafe anti-poisoning guardrails.
+- `workflow_list`, `workflow_execute`: Declarative multi-agent DAG runner with Jev acceptance criteria verification.
+- `typesafe_route_task`: Speculative task routing to specialist personas and skills.
+- `typesafe_verify_claim`: Double-check factual claims against source context.
+- `typesafe_evaluate_risk`: Assess command blast radius and security risk severity.
 """
     (GEMINI_CONFIG / "AGENTS.md").write_text(content, encoding="utf-8")
     (GEMINI_CONFIG / "GEMINI.md").write_text(content, encoding="utf-8")
@@ -254,7 +297,10 @@ def sync_opencode_commands():
         "statistical-hypothesis-tester": ("stats", "Design A/B tests, normality tests, and multiple hypothesis corrections"),
         "streaming-and-event-driven": ("streaming", "Design Kafka/Redis Streams topics, partition keys, and DLQ retries"),
         "vector-database-architect": ("vectordb", "Tune HNSW/IVFFlat indexes, SQ8/PQ vector quantization, and sizing"),
-        "workspace-researcher": ("research", "Multi-source web and codebase intelligence gathering")
+        "workspace-researcher": ("research", "Multi-source web and codebase intelligence gathering"),
+        "get-shit-done": ("gsd", "Structured 3-tier work breakdown into milestones and vertical slices"),
+        "human-writer": ("human-writer", "Convert AI-generated text into authentic, natural prose using 29 anti-patterns"),
+        "typesafe-ai": ("typesafe", "TypeSafe System One judgments, speculative routing, citation verification, and risk evaluation")
     }
     
     count = 0
@@ -271,9 +317,22 @@ Use the {skill_name} skill to: $ARGUMENTS
     print(f"    [+] Created/updated {count} OpenCode slash command definitions in {OPENCODE_COMMANDS}")
 
 def main():
+    parser = argparse.ArgumentParser(description="Agent Foundry Global Synchronization")
+    parser.add_argument("--skip-tests", action="store_true", help="Skip pre-sync test verification")
+    parser.add_argument("--test-only", action="store_true", help="Run pre-sync test suites only without syncing")
+    args = parser.parse_args()
+
     print("=======================================================")
     print("  AGENT FOUNDRY GLOBAL SYNCHRONIZATION")
     print("=======================================================")
+
+    if not args.skip_tests:
+        run_pre_sync_validations()
+
+    if args.test_only:
+        print("[+] Test-only mode: all pre-sync suites verified. Exiting without syncing files.")
+        return
+
     sync_agent_foundry_global()
     sync_antigravity_config_skills()
     update_skills_json()
