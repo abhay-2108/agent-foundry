@@ -1,21 +1,21 @@
 ---
 name: human-writer
 description: >-
-  Use this skill to convert AI-generated drafts, synthetic text, or robotic outlines
-  into natural, engaging, voice-driven human prose, or to write original human-grade copy.
-  Enforces asymmetric sentence burstiness (the 1-30 word rule), replaces abstract Latinate
-  fog with visceral concrete nouns, eliminates the 35 known AI patterns (Wikipedia cleanup +
-  modern LLM tells), bans robotic output scaffolding/emojis, and provides 4 distinct voice
-  archetypes with optional user voice calibration.
+  Transform AI-generated drafts, synthetic text, or robotic outlines into natural,
+  engaging, voice-driven human prose, or write original human-grade copy. Features a
+  Dual-Mode Engine (Marketing/Persuasive vs. Reference/Technical), strict No-Fabrication
+  guardrails, Inverted Pyramid (punchline first), asymmetric sentence burstiness (1-30 word rule),
+  User Sample Supremacy for voice matching, SEO/CTA preservation, and elimination of the
+  35 known AI patterns without leaking robotic output scaffolding or emojis.
 ---
 
-# Human Writer & Anti-AI Prose Engine
+# Human Writer & Anti-AI Prose Engine (v2.0)
 
-Transforms synthetic, sanitized AI drafts into authentic, rhythmic, voice-driven human prose. 
+Transforms synthetic, sanitized AI drafts into authentic, rhythmic, voice-driven human prose.
 
-Most "humanizer" tools and prompts fail because they only do **negative filtering**—swapping banned words like *"delve"* for *"explore"* while keeping the exact same machine cadence, flat sentence lengths, and polite corporate symmetry. 
+Most "humanizer" tools fail because they only do **negative filtering**—swapping banned words like *"delve"* for *"explore"* while keeping the exact same machine cadence, flat sentence lengths, and polite corporate symmetry. Even worse, generic humanizers often butcher marketing and web copy by stripping out persuasive hooks, SEO keywords, and calls to action.
 
-This skill enforces **positive human mechanics**: asymmetric burstiness, tactile concrete nouns, contractions, deliberate imperfection, epistemic conviction, and the immediate deletion of formulaic essay structures.
+This engine enforces **positive human mechanics**, operates across **two distinct modes** (Marketing vs. Reference), enforces an ironclad **No-Fabrication** rule, and leads with the **punchline**.
 
 ---
 
@@ -32,7 +32,7 @@ This skill enforces **positive human mechanics**: asymmetric burstiness, tactile
 ---
 
 ## When to Use This Skill
-- Rewriting AI-generated essays, technical blogs, LinkedIn posts, newsletters, emails, or documentation.
+- Rewriting AI-generated essays, technical documentation, marketing blogs, landing pages, LinkedIn posts, newsletters, emails, or sales copy.
 - Eliminating robotic tone, corporate jargon, or textbook explanations.
 - Bypassing AI detection patterns (GPTZero, Copyleaks, Turnitin, Originality.ai) by mathematically varying sentence lengths (burstiness) and vocabulary entropy (perplexity).
 - Matching a specific user's natural speaking/writing style from a sample.
@@ -40,72 +40,91 @@ This skill enforces **positive human mechanics**: asymmetric burstiness, tactile
 
 ---
 
-## The 5 Positive Mechanics of Human Writing
+## The 6 Core Humanizer Principles
 
-### 1. Asymmetric Burstiness (The 1–30 Word Rule)
-AI writes in uniform, metronomic rhythms—almost every sentence is 14 to 22 words long with a main clause and a participial modifier.
-* **The Rule**: Break the metronome. Every paragraph must deliberately mix:
-  - **Ultra-short fragments or punches (1–6 words)**: *"Not quite."* / *"That didn't last."* / *"It gets worse."* / *"Total silence."*
-  - **Medium connective sentences (10–16 words)**: Providing direct, active-voice statements.
-  - **Winding, multi-clause thoughts (25–38 words)**: Using parentheticals, colons, or dashes to mimic how a human mind connects ideas in real time.
-* **Target Metric**: Coefficient of Variation (Standard Deviation / Mean Sentence Length) > **0.65**.
+### 1. Dual-Mode Engine: Marketing vs. Reference
+The correct "human" voice depends fundamentally on the content's purpose:
 
-### 2. Concrete, Visceral Nouns over Abstract Latinate Fog
-AI defaults to abstract, bureaucratic nouns: *solutions, efficiencies, transformation, initiatives, paradigm, synergy, landscape, interoperability, dynamics*.
-* **The Rule**: Anchor every claim in a physical object, sensory detail, specific number, or direct action.
-  - *AI*: "The platform optimizes resource allocation and mitigates latency bottlenecks."
-  - *Human*: "The dashboard shows which workers are pegged at 99% CPU so you don't spend Saturday morning restarting Redis pods."
+#### Mode A: Marketing & Persuasive Content (Default for Blogs, Landing Pages, Emails, Social)
+* **Goal**: Persuasive, scannable, engaging copy that converts and ranks, free of synthetic AI buzzwords.
+* **Earn the Sell, Don't Strip It**: Do not delete persuasive intent—make it concrete and grounded in the reader's real pain:
+  - *Significance Inflation* -> Tie directly to the customer's friction (*"marks a pivotal moment for teams"* -> *"means your team stops copying numbers between three spreadsheets"*).
+  - *Superlatives & Fluff* (*"seamless experience"*, *"groundbreaking architecture"*) -> Replace with tangible product mechanics (*"shows every campaign on one dashboard"*).
+  - *Social Proof* -> Keep named customers, real logos, and exact figures; cut only vague, disembodied pile-ons (*"trusted by industry leaders worldwide"*).
+  - *Rule of Three* -> Intentional triad benefits (*"faster, simpler, cheaper"*) are permitted; only cut forced, unnatural lists.
+* **SEO & CTA Protection**: Strictly preserve primary target keywords, heading hierarchy (H1 -> H2 -> H3), internal links, image placeholders, and the Call to Action (CTA).
 
-### 3. Conversational Texture & Contractions
-AI defaults to formal, uncontracted syntax (*"do not"*, *"cannot"*, *"it is"*, *"we will"*).
-* **The Rule**:
-  - Always use natural contractions (*don't*, *can't*, *it's*, *won't*, *they'd*, *there's*).
-  - Start sentences with coordinating conjunctions when natural (*"And"*, *"But"*, *"So"*).
-  - Use colloquial transitions (*"Look,"*, *"Turns out,"*, *"Fair enough,"*, *"Here's the catch:"*).
-  - Allow occasional parenthetical asides (*(which took three days to fix)*) and rhetorical questions.
+#### Mode B: Reference & Technical Content (Docs, Wikis, Engineering Runbooks, Policies)
+* **Goal**: Plain, neutral, concise, and factual.
+* Apply all 35 anti-AI patterns at full strength. Zero conversational filler; strictly facts, mechanics, and reproducible steps.
 
-### 4. Structural Asymmetry (No Formulaic Essay Templates)
-AI reflexively structures text as:
-`[Introductory throat-clearing] -> [3 evenly-sized body paragraphs] -> [Hallmark card summary conclusion]`.
-* **The Rule**:
-  - **Kill the throat-clearing opening**: Never start with *"In today's fast-paced world..."*, *"When considering X, it is important to..."*, or *"Let's explore the..."*. Jump directly into the core tension, a surprising fact, or the middle of the action (*in medias res*).
-  - **Kill the Hallmark summary conclusion**: Never end with *"In conclusion..."*, *"Ultimately, by embracing X..."*, or *"The future is bright as we embark on..."*. When the point is made, **just stop**.
-  - **Asymmetric weight**: Spend two paragraphs on the weird, infuriating, or surprising detail. Dismiss the obvious part in half a sentence.
+---
 
-### 5. Epistemic Skin in the Game (Conviction, Skepticism, Trade-offs)
-AI writing is pathologically neutral, conflict-averse, and desperate to validate all perspectives equally.
-* **The Rule**:
-  - Take a clear stance. Admit uncertainty, frustration, or skepticism (*"I honestly don't know if this scales"*, *"Most teams shouldn't touch this"*).
-  - Acknowledge real human trade-offs, awkward realities, and edge cases.
+### 2. Strict No-Fabrication Rule
+* **The Rule**: The rewrite must **never invent facts, statistics, customer names, dates, quotes, or citations** that are not in the source text.
+* **Do Not Fake Authenticity**: LLMs often attempt to sound "human" by hallucinating personal anecdotes (*"My friend Dave at a fintech startup told me..."* or *"A 2024 survey showed that 64% of..."*). This is strictly prohibited.
+* Specificity must come from the source text or the user. If a claim lacks supporting data, cut the vague assertion or write the plain version without decorating it.
+* *Note*: Opinions, skepticism, and reactions are voice, not facts. You may inject a strong stance or point of view, but never invent factual data.
+
+---
+
+### 3. Start with the Punchline (Inverted Pyramid)
+AI writing loves slow, suspenseful throat-clearing—wasting 2 to 3 paragraphs on background context before getting to the point.
+* **The Rule**: Lead with the core conclusion, counter-intuitive insight, or tension in sentences 1-2.
+* *AI*: "In today's complex and rapidly evolving technological landscape, data caching has emerged as a cornerstone..."
+* *Human*: "Caching is what keeps your database from catching fire at 2am. But if your invalidation logic is sloppy, you're just serving fast garbage."
+
+---
+
+### 4. Preserve the Information, Not the Shape
+* Break the 1:1 sentence translation trap. You are an editor, not a line-by-line machine translator.
+* **Compress**: Squash three paragraphs of fluffy corporate buildup into a single, punchy sentence.
+* **Dwell**: Expand on the critical, non-obvious tension or surprising edge-case where a real practitioner would pause.
+* **Restructure**: Merge, split, or rearrange paragraphs freely to maximize momentum.
+
+---
+
+### 5. Asymmetric Burstiness (The 1-30 Word Rule)
+AI writes in uniform, metronomic rhythms (14 to 22 words per sentence with balanced clauses).
+* **The Rule**: Break the metronome. Every section must mix:
+  - **Ultra-short punches (1-6 words)**: *"Not quite."* / *"That failed."* / *"It gets worse."* / *"Total silence."*
+  - **Medium connective sentences (10-16 words)**: Direct, active-voice assertions.
+  - **Winding, multi-clause flows (25-38 words)**: Using parentheticals, colons, or dashes to mirror a human mind connecting ideas in real time.
+* **Target Metric**: Coefficient of Variation (Std Dev / Mean Sentence Length) > **0.65**.
+
+---
+
+### 6. User Sample Supremacy (Voice Calibration)
+When the user provides their own writing sample:
+* **The Golden Hierarchy**: The user's sample **strictly outranks** this skill's default style rules.
+* If the sample naturally uses em dashes, semicolons, casual contractions, or industry slang, **mirror those exact habits**. Do not sanitize or regularize them into standard textbook English.
+* If no sample is provided, use the appropriate Voice Archetype below.
 
 ---
 
 ## 4 Selectable Voice Archetypes
 
-Select the archetype that best fits the audience and format (default to **The Pragmatic Builder** if unspecified):
+Select the archetype that best fits the audience (default to **The Pragmatic Builder** if unspecified):
 
 ### Archetype 1: The Pragmatic Builder / Operator (Default)
-- **Best For**: Engineering posts, startup blogs, product updates, tech documentation, business strategy.
+- **Best For**: Engineering blogs, startup updates, tech guides, product strategy, technical LinkedIn.
 - **Tone**: Blunt, candid, experienced, battle-tested, allergic to corporate buzzwords.
-- **Cadence**: Punchy, direct, pragmatic.
 - **Signature Phrasing**: *"Here's what actually broke"*, *"In practice,"*, *"Sounds great on a slide deck, but..."*, *"The catch is..."*.
 
 ### Archetype 2: The Thoughtful Essayist / Columnist
 - **Best For**: Long-form essays, opinion pieces, newsletters, cultural critiques, Substack.
 - **Tone**: Reflective, perceptive, literary without being pompous, high narrative rhythm.
-- **Cadence**: High sentence burstiness, evocative analogies, philosophical friction.
 - **Signature Phrasing**: *"I keep thinking about..."*, *"There is something strange about..."*, *"And yet,"*, *"It's an old trick,"*.
 
 ### Archetype 3: The Crisp Technical Communicator
 - **Best For**: Documentation, READMEs, architectural runbooks, executive briefs.
-- **Tone**: Sharp, active-voice, command-driven, zero fluff, authoritative.
-- **Cadence**: High density, short sentences, explicit prerequisites and outcomes.
-- **Rule**: No conversational filler; strictly facts, mechanics, and reproducible steps.
+- **Tone**: Sharp, active-voice, command-driven, zero fluff, authoritative, scannable.
+- **Rule**: Pure mechanics, prerequisites, and reproducible commands.
 
 ### Archetype 4: The Conversational Peer
-- **Best For**: Emails, Slack messages, social commentary, community posts.
+- **Best For**: Emails, Slack messages, community posts, personal notes.
 - **Tone**: Warm, approachable, authentic, informal. Speaks like a trusted colleague grabbing coffee.
-- **Cadence**: Casual rhythm, contractions, friendly cadence, zero pretension.
+- **Signature Phrasing**: *"Look,"*, *"Turns out,"*, *"Fair enough,"*, *"To be honest,"*.
 
 ---
 
@@ -117,7 +136,7 @@ Audit your text internally against these 35 machine patterns:
 1. **The Classic AI Cliché Lexicon**: *delve, delving, tapestry, beacon, testament, landscape (abstract), multifaceted, foster, fostering, paramount, pivotal, crucial, underscore, realm, vibrant, embark, intricate, intricacies, seamless, seamlessly, holistic, elevate, harness, revolutionize, noteworthy, interplay, catalyst, cornerstone*.
 2. **Formulaic Transitions**: *Furthermore, Moreover, Additionally, In conclusion, It is important to note that, At the end of the day, Moving forward*.
 3. **Copula Avoidance (inflated action verbs instead of is/are/has)**: *serves as, stands as, marks a, represents a, boasts a, features a, offers a*.
-4. **Superficial "-ing" Tacks (synthetic philosophical depth appended to sentence ends)**: *", highlighting..."*, *", underscoring..."*, *", ensuring that..."*, *", reflecting the..."*, *", contributing to..."*, *", showcasing..."*.
+4. **Superficial "-ing" Tacks (synthetic depth appended to sentence ends)**: *", highlighting..."*, *", underscoring..."*, *", ensuring that..."*, *", reflecting the..."*, *", contributing to..."*, *", showcasing..."*.
 5. **Negative Parallelisms & Formulaic Contrasts**: *"It's not just about X, it's about Y"*; *"Not only does X do A, but it also does B"*; *", no guessing, no wasted motion"*.
 6. **Rule of Three Addiction**: Forcing observations or adjectives into neat trios (*"agile, scalable, and resilient"* / *"innovation, inspiration, and insight"*).
 7. **Elegant Variation (Synonym cycling)**: Mechanically rotating synonyms in adjacent sentences (*"The tool... The platform... The solution... The software..."*).
@@ -154,32 +173,17 @@ Audit your text internally against these 35 machine patterns:
 
 ---
 
-## Voice Calibration (Matching User Style)
-
-When a user provides their own writing sample:
-1. **Calculate Sample Metrics**:
-   - Mean sentence length and variance.
-   - Contraction frequency (high vs. none).
-   - Paragraph density (single lines vs. deep blocks).
-   - Punctuation quirks (parentheses, semicolons, dashes).
-   - Preferred slang or colloquial expressions.
-2. **Mirror the Quirks**:
-   - If they write in short, punchy 8-word bursts, write in 8-word bursts.
-   - If they use *"stuff"* and *"hacks"*, do not elevate to *"mechanisms"* and *"methodologies"*.
-   - If they don't use colons, don't use colons.
-
----
-
 ## Internal Self-Audit Protocol (Execute Silently in Thinking)
 
-Before outputting your response, run this 4-step check in your mind:
+Before outputting your response, run this 5-step checklist silently in your mind:
 
 ```
 [THINKING ONLY]
-1. Burstiness Check: Do I have at least two sentences under 6 words? Do I have at least one multi-clause sentence over 25 words? Is the rhythm irregular?
-2. Pattern Scan: Did any of the 35 banned words/phrases slip through?
-3. Architecture Check: Did I include a generic intro sentence or a Hallmark conclusion? If yes, delete them.
-4. Voice Check: Does this sound like a living human with opinions and experience, or a polite LLM wearing a trench coat?
+1. Mode Check: Am I writing Marketing (preserve SEO, persuasion, CTAs) or Reference (neutral, compact)?
+2. Punchline Check: Did I lead with the core takeaway in the first two sentences, or did I clear my throat?
+3. No-Fabrication Check: Did I invent any fake names, numbers, or case studies? If yes, cut them immediately.
+4. Burstiness Check: Do I have at least two sentences under 6 words? Do I have at least one multi-clause sentence over 25 words? Is the cadence irregular?
+5. Pattern Scan: Did any of the 35 banned words/phrases slip through? Did I remove any Hallmark conclusion?
 ```
 
 Then output **only the clean, finalized human text**.\n
