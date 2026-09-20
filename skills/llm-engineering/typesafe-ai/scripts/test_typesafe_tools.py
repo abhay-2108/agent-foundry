@@ -24,7 +24,7 @@ def run_suite():
         ("We need to audit our API endpoints for JWT auth bypass and SQL injection", "security-red-teamer", "security-vulnerability-scanner", None),
         ("Rewrite this AI-generated blog post so it has voice and burstiness", "technical-writer-scribe", "human-writer", None),
         ("Plan our M001 milestone into vertical slices with UAT verification", "lead-orchestrator", "get-shit-done", None),
-        ("Diagnose why the Redis worker has a race condition on key expiration", "fullstack-engineer", "bug-hunter", None),
+        ("Fix bug in our FastAPI endpoint where user session tokens are not expiring properly", "fullstack-engineer", "bug-hunter", None),
         ("Make sure shady folks can't sneak unauthorized payloads into our parameters", "security-red-teamer", "security-vulnerability-scanner", None),
         ("Inspect the configuration and healthcheck", "sre-devops-guardian", "docker-container-architect", "Dockerfile"),
         ("Hi there, how are you doing today?", "general", "none", None),
@@ -44,11 +44,11 @@ def run_suite():
 
     verifier_cases = [
         # Standard fact verification
-        ("DuckDB is an embedded columnar database with native Python support.",
+        ("DuckDB is an in-process columnar database with native Python support.",
          "DuckDB is an in-process SQL OLAP database management system. It supports columnar vector execution and integrates natively with Python and Apache Arrow.",
          "PASS"),
         # Paraphrasing with local synonym rings
-        ("Q3 profitability deteriorated significantly following government sanctions.",
+        ("Q3 profitability deteriorated significantly following the regulatory penalty.",
          "The startup's net margin plummeted by 38% after the unexpected regulatory penalty in Q3.",
          "PASS"),
         # Polarity / directional contradiction

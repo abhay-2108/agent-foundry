@@ -129,20 +129,19 @@ class TypeSafeVerifier:
         }
 
         try:
-            with self._client as client:
-                res = client.system_one(state=state, questions=questions)
+            res = self._client.system_one(state=state, questions=questions)
 
             prob = float(res.nouls["is_supported"].noul)
             status_choice = res.choices["support_status"].choice
             status_conf = float(getattr(res.choices["support_status"], "confidence", 1.0) or 1.0)
             severity_score = float(res.scores["severity"].score)
 
-            is_faithful = (prob >= 0.85) and (status_choice == "fully_supported")
+            is_faithful = (prob >= 0.80) and (status_choice == "fully_supported") and (severity_score <= 1.0)
 
             if is_faithful:
                 action = "PASS"
                 explanation = "Claim is mathematically and factually corroborated by the source text."
-            elif status_choice == "partially_supported" or (0.50 <= prob < 0.85):
+            elif status_choice == "partially_supported" or (0.45 <= prob < 0.80):
                 action = "FLAG_FOR_REVIEW"
                 explanation = "Claim contains extrapolated details or figures not explicitly confirmed in the source."
             else:

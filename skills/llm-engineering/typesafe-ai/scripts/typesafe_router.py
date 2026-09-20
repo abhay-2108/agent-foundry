@@ -42,8 +42,8 @@ PERSONAS = {
     "browser-navigator": "E2E web specialist; designs DOM interactions, verifies UI layouts, and captures visual regression evidence.",
     "sre-devops-guardian": "Reliability engineer; inspects Dockerfiles, CI/CD pipelines, latency budgets, and health check architectures.",
     "finops-token-router": "Inference economist; optimizes context windows, enforces token budgets, leverages prompt caching, and reduces API costs.",
-    "technical-writer-scribe": "Documentation architect; creates structured markdown, architecture decision records (ADRs), and visual mermaid diagrams.",
-    "general": "Standard conversational or non-specialized coding inquiry.",
+    "technical-writer-scribe": "Documentation and prose architect; humanizes AI text, crafts voice-driven blogs, essays, and articles, authors ADRs and structured markdown.",
+    "general": "Trivial casual small-talk, greetings, or non-specialized chat.",
 }
 
 # Key Agent Foundry Skills
@@ -141,7 +141,7 @@ class TypeSafeRouter:
 
         questions = {
             "needs_specialist": Noul(
-                instructions="Does this request require a specialized engineering discipline/skill, or can it be handled by standard general conversation?"
+                instructions="Does this request require a specialized engineering, writing, or analysis persona/skill, or is it trivial casual greeting/small-talk?"
             ),
             "persona": Choice(
                 instructions="Which specialist persona has the best domain expertise to solve this user task?",
@@ -165,21 +165,22 @@ class TypeSafeRouter:
         }
 
         try:
-            with self._client as client:
-                res = client.system_one(state=state, questions=questions)
+            res = self._client.system_one(state=state, questions=questions)
 
             needs_prob = float(res.nouls["needs_specialist"].noul)
             persona_res = res.choices["persona"]
             skill_res = res.choices["skill"]
             task_type_res = res.choices["task_type"]
 
-            action = f"Delegate to @{persona_res.choice}" if needs_prob >= 0.5 and persona_res.choice != "general" else "Execute directly in general conversation"
+            is_specialist = (needs_prob >= 0.50) or (persona_res.choice != "general" and skill_res.choice != "none")
+            chosen_persona = persona_res.choice if is_specialist else "general"
+            action = f"Delegate to @{chosen_persona}" if chosen_persona != "general" else "Execute directly in general conversation"
 
             return RouteDecision(
                 user_prompt=user_prompt,
-                needs_specialist=(needs_prob >= 0.5),
+                needs_specialist=is_specialist,
                 needs_specialist_prob=round(needs_prob, 3),
-                target_persona=persona_res.choice,
+                target_persona=chosen_persona,
                 persona_confidence=round(float(getattr(persona_res, "confidence", 1.0) or 1.0), 3),
                 target_skill=skill_res.choice,
                 skill_confidence=round(float(getattr(skill_res, "confidence", 1.0) or 1.0), 3),
