@@ -146,4 +146,87 @@ Test representative cases and the resulting application behavior. For failures,
 inspect the exact state, questions, candidates, answers, composition, and observed
 outcome. Separate missing evidence, model errors, code errors, and service failures.
 Treat cookbook thresholds and demo results as examples to evaluate, not universal
-rules or permanent model limitations. Keep API credentials server-side in web apps.\n
+rules or permanent model limitations. Keep API credentials server-side in web apps.
+
+---
+
+## Agent Foundry Pre-Built Utilities
+
+This skill includes two production-grade utilities built specifically for the Agent Foundry ecosystem:
+
+### 1. Speculative Agent & Skill Router (`scripts/typesafe_router.py`)
+Replaces heavy, slow (2–4s) LLM classification with a single ~100ms batched System One request that evaluates:
+- **`needs_specialist`** (`Noul`): Probability the prompt requires a dedicated specialist.
+- **`persona`** (`Choice`): Optimal Agent Foundry specialist from the 10 core personas (`@lead-orchestrator`, `@fullstack-engineer`, `@security-red-teamer`, `@code-quality-auditor`, `@data-scientist`, etc.).
+- **`skill`** (`Choice`): Relevant skill runbook among the 39 globally indexed Agent Foundry skills.
+- **`task_type`** (`Choice`): Category classification (`implementation`, `debugging`, `review_audit`, `architecture_planning`, `writing_documentation`, `general_chat`).
+
+**CLI Usage:**
+```bash
+# Route a prompt interactively
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_router.py "We need to audit our API endpoints for JWT auth bypass and SQL injection"
+
+# Output as JSON for programmatic piping
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_router.py --json "Plan M001 milestone into vertical slices"
+
+# Run built-in self test suite
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_router.py --test
+```
+
+**Python Usage:**
+```python
+from typesafe_router import TypeSafeRouter
+
+router = TypeSafeRouter()
+decision = router.route("Diagnose why the Redis worker has a race condition on key expiration")
+print(decision.target_persona)  # "fullstack-engineer"
+print(decision.target_skill)    # "bug-hunter"
+print(decision.recommended_action)
+```
+
+---
+
+### 2. Citation & Hallucination Double-Checker (`scripts/typesafe_verifier.py`)
+Performs double-checking on generated claims against retrieved context or source documents before presenting to users:
+- **`factual_support`** (`Noul`): Direct factual grounding probability (enforces strict threshold $\ge 0.85$).
+- **`status`** (`Choice`): Agreement classification (`fully_supported`, `partially_supported`, `contradicted`, `unsupported_missing`).
+- **`severity`** (`Score`): Hallucination severity on a graded 0 to 3 scale (`none`, `minor`, `moderate`, `critical`).
+- **Recommended Action**: `PASS`, `FLAG_FOR_REVIEW`, or `REJECT_AND_RETRY`.
+
+**CLI Usage:**
+```bash
+# Check a claim against an inline source snippet
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_verifier.py \
+  --claim "DuckDB supports columnar vector execution." \
+  --source "DuckDB is an in-process SQL OLAP database management system supporting columnar vector execution."
+
+# Check using file inputs
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_verifier.py \
+  --file-claim claim.txt \
+  --file-source context.txt
+
+# Run built-in self test suite
+python skills/llm-engineering/typesafe-ai/scripts/typesafe_verifier.py --test
+```
+
+**Python Usage:**
+```python
+from typesafe_verifier import TypeSafeVerifier
+
+verifier = TypeSafeVerifier()
+report = verifier.verify(
+    claim="PostgreSQL 16 supports bidirectional logical replication.",
+    source="PostgreSQL 16 introduced bidirectionally replicated logical replication."
+)
+if report.recommended_action != "PASS":
+    print(f"Hallucination detected! Severity: {report.severity_label} (p={report.support_probability})")
+```
+
+---
+
+### 3. API Key & Offline Simulation
+Both tools support dual operation:
+1. **Live System One Mode**: Export your API key in the environment:
+   - PowerShell: `$env:TYPESAFE_API_KEY = "your-typesafe-api-key"`
+   - Bash: `export TYPESAFE_API_KEY="your-typesafe-api-key"`
+2. **Offline Simulation Mode**: If `TYPESAFE_API_KEY` is not set or network is unreachable, both tools automatically fall back to local lexical/semantic simulation, guaranteeing 100% operational uptime without throwing unhandled exceptions.
