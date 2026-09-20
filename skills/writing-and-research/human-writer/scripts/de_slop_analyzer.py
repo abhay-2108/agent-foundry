@@ -29,6 +29,11 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # WikiProject AI Cleanup Banned Lexicon
 AI_VOCABULARY = [
     "delve", "delving", "tapestry", "beacon", "testament", "landscape",

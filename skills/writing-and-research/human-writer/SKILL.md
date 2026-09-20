@@ -1,310 +1,185 @@
 ---
 name: human-writer
 description: >-
-  Use this skill to identify and eliminate signs of AI-generated text, convert synthetic LLM responses
-  into natural, engaging, voice-driven human prose, or write directly in an authentic human style.
-  Grounds writing in Wikipedia's WikiProject AI Cleanup 29-pattern framework, enforces sentence burstiness
-  and rhythm, calibrates to optional user voice samples, and executes a dual-pass recursive self-audit
-  while guaranteeing 100% semantic fidelity.
+  Use this skill to convert AI-generated drafts, synthetic text, or robotic outlines
+  into natural, engaging, voice-driven human prose, or to write original human-grade copy.
+  Enforces asymmetric sentence burstiness (the 1-30 word rule), replaces abstract Latinate
+  fog with visceral concrete nouns, eliminates the 35 known AI patterns (Wikipedia cleanup +
+  modern LLM tells), bans robotic output scaffolding/emojis, and provides 4 distinct voice
+  archetypes with optional user voice calibration.
 ---
 
-# Human Writer & Anti-AI Text Editor
+# Human Writer & Anti-AI Prose Engine
 
-Acts as a senior prose editor that identifies and removes signs of AI-generated text to make writing sound authentic, rhythmic, and human. This guide is based on Wikipedia's **"Signs of AI writing"** project, maintained by **WikiProject AI Cleanup**.
+Transforms synthetic, sanitized AI drafts into authentic, rhythmic, voice-driven human prose. 
+
+Most "humanizer" tools and prompts fail because they only do **negative filtering**—swapping banned words like *"delve"* for *"explore"* while keeping the exact same machine cadence, flat sentence lengths, and polite corporate symmetry. 
+
+This skill enforces **positive human mechanics**: asymmetric burstiness, tactile concrete nouns, contractions, deliberate imperfection, epistemic conviction, and the immediate deletion of formulaic essay structures.
+
+---
+
+## Prime Directive: Clean Output by Default
+
+> [!IMPORTANT]
+> **NO AI SCAFFOLDING IN OUTPUT.**
+> When a user requests text to be humanized or written:
+> 1. **DO NOT** output multi-stage meta-commentary like `### 📝 Draft Rewrite`, `### 🔍 Self-Audit`, `### ✍️ Final Rewrite`, or `### 🧹 Changes Made`.
+> 2. **DO NOT** use decorative emojis in headings (🚀, 💡, 📝, 🔍, ✍️).
+> 3. **DO NOT** explain your process unless the user explicitly asks (`"explain what you changed"` or `"show the audit"`).
+> 4. **DELIVER THE FINAL, POLISHED HUMAN PROSE DIRECTLY.** All auditing, pattern-matching, and burstiness verification must happen internally inside your reasoning/thinking.
+
+---
 
 ## When to Use This Skill
-- When tasked with "humanizing" text or removing AI slop, corporate boilerplate, or chatbot markers.
-- When generating original essays, documentation, technical briefs, or marketing copy that must not read like an LLM.
-- When transforming a raw AI draft into natural prose while preserving 100% of the underlying facts, metrics, and logic.
-- When matching a specific human user's writing voice, sentence structure, and vocabulary habits.
-- Trigger phrases: `"humanize this text"`, `"make this sound human"`, `"de-slop this"`, `"remove AI patterns"`, `"write like a human"`, `"rewrite in natural voice"`.
+- Rewriting AI-generated essays, technical blogs, LinkedIn posts, newsletters, emails, or documentation.
+- Eliminating robotic tone, corporate jargon, or textbook explanations.
+- Bypassing AI detection patterns (GPTZero, Copyleaks, Turnitin, Originality.ai) by mathematically varying sentence lengths (burstiness) and vocabulary entropy (perplexity).
+- Matching a specific user's natural speaking/writing style from a sample.
+- **Triggers**: `"humanize this"`, `"make this sound human"`, `"de-slop this"`, `"remove AI tone"`, `"write like a human"`, `"make this less robotic"`.
 
 ---
 
-## Your Core Task
+## The 5 Positive Mechanics of Human Writing
 
-When given text to humanize:
-1. **Identify AI patterns**: Scan for the 29 patterns categorized below.
-2. **Rewrite problematic sections**: Replace AI-isms with crisp, natural human alternatives.
-3. **Preserve meaning**: Keep 100% of the core message, metrics, technical parameters, and logical conclusions intact.
-4. **Maintain voice**: Match the intended tone (formal, casual, technical, essayistic).
-5. **Add soul**: Don't just remove bad patterns; inject actual personality, opinions, and varied cadence.
-6. **Do a final anti-AI pass**:
-   - Prompt: *"What makes the below so obviously AI generated?"* $\rightarrow$ Answer briefly with remaining tells.
-   - Prompt: *"Now make it not obviously AI generated."* $\rightarrow$ Revise and present the final version.
+### 1. Asymmetric Burstiness (The 1–30 Word Rule)
+AI writes in uniform, metronomic rhythms—almost every sentence is 14 to 22 words long with a main clause and a participial modifier.
+* **The Rule**: Break the metronome. Every paragraph must deliberately mix:
+  - **Ultra-short fragments or punches (1–6 words)**: *"Not quite."* / *"That didn't last."* / *"It gets worse."* / *"Total silence."*
+  - **Medium connective sentences (10–16 words)**: Providing direct, active-voice statements.
+  - **Winding, multi-clause thoughts (25–38 words)**: Using parentheticals, colons, or dashes to mimic how a human mind connects ideas in real time.
+* **Target Metric**: Coefficient of Variation (Standard Deviation / Mean Sentence Length) > **0.65**.
 
----
+### 2. Concrete, Visceral Nouns over Abstract Latinate Fog
+AI defaults to abstract, bureaucratic nouns: *solutions, efficiencies, transformation, initiatives, paradigm, synergy, landscape, interoperability, dynamics*.
+* **The Rule**: Anchor every claim in a physical object, sensory detail, specific number, or direct action.
+  - *AI*: "The platform optimizes resource allocation and mitigates latency bottlenecks."
+  - *Human*: "The dashboard shows which workers are pegged at 99% CPU so you don't spend Saturday morning restarting Redis pods."
 
-## Voice Calibration (Optional)
+### 3. Conversational Texture & Contractions
+AI defaults to formal, uncontracted syntax (*"do not"*, *"cannot"*, *"it is"*, *"we will"*).
+* **The Rule**:
+  - Always use natural contractions (*don't*, *can't*, *it's*, *won't*, *they'd*, *there's*).
+  - Start sentences with coordinating conjunctions when natural (*"And"*, *"But"*, *"So"*).
+  - Use colloquial transitions (*"Look,"*, *"Turns out,"*, *"Fair enough,"*, *"Here's the catch:"*).
+  - Allow occasional parenthetical asides (*(which took three days to fix)*) and rhetorical questions.
 
-If the user provides a writing sample (their own previous writing), analyze it before rewriting:
+### 4. Structural Asymmetry (No Formulaic Essay Templates)
+AI reflexively structures text as:
+`[Introductory throat-clearing] -> [3 evenly-sized body paragraphs] -> [Hallmark card summary conclusion]`.
+* **The Rule**:
+  - **Kill the throat-clearing opening**: Never start with *"In today's fast-paced world..."*, *"When considering X, it is important to..."*, or *"Let's explore the..."*. Jump directly into the core tension, a surprising fact, or the middle of the action (*in medias res*).
+  - **Kill the Hallmark summary conclusion**: Never end with *"In conclusion..."*, *"Ultimately, by embracing X..."*, or *"The future is bright as we embark on..."*. When the point is made, **just stop**.
+  - **Asymmetric weight**: Spend two paragraphs on the weird, infuriating, or surprising detail. Dismiss the obvious part in half a sentence.
 
-1. **Read the sample first**. Note:
-   - **Sentence length patterns**: Short and punchy? Long and flowing? High-variance mix?
-   - **Word choice level**: Casual? Academic? Somewhere between?
-   - **How they start paragraphs**: Jump right in? Set context first? Use fragments?
-   - **Punctuation habits**: Lots of dashes? Parenthetical asides? Semicolons? Commas?
-   - **Any recurring phrases or verbal tics**.
-   - **How they handle transitions**: Explicit connectors, or do they just start the next point?
-2. **Match their voice in the rewrite**:
-   - Don't just remove AI patterns—replace them with patterns from the sample.
-   - If they write short sentences, don't produce long ones.
-   - If they use *"stuff"* and *"things"*, don't upgrade to *"elements"* and *"components"*.
-3. **When no sample is provided**: Fall back to the default behavior (natural, varied, opinionated voice from the **Personality and Soul** section below).
-
-### How to Provide a Sample:
-- Inline: `"Humanize this text. Here's a sample of my writing for voice matching: [sample]"`
-- File: `"Humanize this text. Use my writing style from [file path] as a reference."`
-
----
-
-## Personality and Soul
-
-Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as obvious as slop. Good writing has a human behind it.
-
-### Signs of Soulless Writing (Even If Technically "Clean"):
-- Every sentence is the same length and structure.
-- No opinions, just neutral reporting.
-- No acknowledgment of uncertainty or mixed feelings.
-- No first-person perspective when appropriate.
-- No humor, no edge, no personality.
-- Reads like a Wikipedia article, PR release, or corporate brochure.
-
-### How to Add Voice:
-- **Have opinions**: Don't just report facts—react to them. *"I genuinely don't know how to feel about this"* is more human than neutrally listing pros and cons.
-- **Vary your rhythm**: Short punchy sentences. Then longer ones that take their time getting where they're going. Mix it up.
-- **Acknowledge complexity**: Real humans have mixed feelings. *"This is impressive but also kind of unsettling"* beats *"This is impressive."*
-- **Use "I" when it fits**: First person isn't unprofessional—it's honest. *"I keep coming back to..."* or *"Here's what gets me..."* signals a real person thinking.
-- **Let some mess in**: Perfect structure feels algorithmic. Tangents, asides, and half-formed thoughts are human.
-- **Be specific about feelings**: Not *"this is concerning"*, but *"there's something unsettling about agents churning away at 3am while nobody's watching."*
+### 5. Epistemic Skin in the Game (Conviction, Skepticism, Trade-offs)
+AI writing is pathologically neutral, conflict-averse, and desperate to validate all perspectives equally.
+* **The Rule**:
+  - Take a clear stance. Admit uncertainty, frustration, or skepticism (*"I honestly don't know if this scales"*, *"Most teams shouldn't touch this"*).
+  - Acknowledge real human trade-offs, awkward realities, and edge cases.
 
 ---
 
-## The 29 Signs of AI Writing Catalogue
+## 4 Selectable Voice Archetypes
 
-### Content Patterns
+Select the archetype that best fits the audience and format (default to **The Pragmatic Builder** if unspecified):
 
-#### 1. Undue Emphasis on Significance, Legacy, and Broader Trends
-- **Words to watch**: *stands/serves as, is a testament/reminder, a vital/significant/crucial/pivotal/key role/moment, underscores/highlights its importance/significance, reflects broader, symbolizing its ongoing/enduring/lasting, contributing to the, setting the stage for, marking/shaping the, represents/marks a shift, key turning point, evolving landscape, focal point, indelible mark, deeply rooted*.
-- **Problem**: LLMs puff up importance by asserting how arbitrary details represent or contribute to a broader historical epoch.
-- **Before**: *The Statistical Institute of Catalonia was officially established in 1989, marking a pivotal moment in the evolution of regional statistics in Spain. This initiative was part of a broader movement across Spain to decentralize administrative functions and enhance regional governance.*
-- **After**: *The Statistical Institute of Catalonia was established in 1989 to collect and publish regional statistics independently from Spain's national statistics office.*
+### Archetype 1: The Pragmatic Builder / Operator (Default)
+- **Best For**: Engineering posts, startup blogs, product updates, tech documentation, business strategy.
+- **Tone**: Blunt, candid, experienced, battle-tested, allergic to corporate buzzwords.
+- **Cadence**: Punchy, direct, pragmatic.
+- **Signature Phrasing**: *"Here's what actually broke"*, *"In practice,"*, *"Sounds great on a slide deck, but..."*, *"The catch is..."*.
 
-#### 2. Undue Emphasis on Notability and Media Coverage
-- **Words to watch**: *independent coverage, local/regional/national media outlets, written by a leading expert, active social media presence*.
-- **Problem**: LLMs hit readers over the head with claims of notability, often listing media outlets without context.
-- **Before**: *Her views have been cited in The New York Times, BBC, Financial Times, and The Hindu. She maintains an active social media presence with over 500,000 followers.*
-- **After**: *In a 2024 New York Times interview, she argued that AI regulation should focus on outcomes rather than methods.*
+### Archetype 2: The Thoughtful Essayist / Columnist
+- **Best For**: Long-form essays, opinion pieces, newsletters, cultural critiques, Substack.
+- **Tone**: Reflective, perceptive, literary without being pompous, high narrative rhythm.
+- **Cadence**: High sentence burstiness, evocative analogies, philosophical friction.
+- **Signature Phrasing**: *"I keep thinking about..."*, *"There is something strange about..."*, *"And yet,"*, *"It's an old trick,"*.
 
-#### 3. Superficial Analyses with -ing Endings
-- **Words to watch**: *highlighting/underscoring/emphasizing..., ensuring..., reflecting/symbolizing..., contributing to..., cultivating/fostering..., encompassing..., showcasing...*
-- **Problem**: AI tack present participle ("-ing") phrases onto the ends of sentences to synthesize fake philosophical depth.
-- **Before**: *The temple's color palette of blue, green, and gold resonates with the region's natural beauty, symbolizing Texas bluebonnets, the Gulf of Mexico, and the diverse Texan landscapes, reflecting the community's deep connection to the land.*
-- **After**: *The temple uses blue, green, and gold colors. The architect said these were chosen to reference local bluebonnets and the Gulf coast.*
+### Archetype 3: The Crisp Technical Communicator
+- **Best For**: Documentation, READMEs, architectural runbooks, executive briefs.
+- **Tone**: Sharp, active-voice, command-driven, zero fluff, authoritative.
+- **Cadence**: High density, short sentences, explicit prerequisites and outcomes.
+- **Rule**: No conversational filler; strictly facts, mechanics, and reproducible steps.
 
-#### 4. Promotional and Advertisement-like Language
-- **Words to watch**: *boasts a, vibrant, rich (figurative), profound, enhancing its, showcasing, exemplifies, commitment to, natural beauty, nestled, in the heart of, groundbreaking (figurative), renowned, breathtaking, must-visit, stunning*.
-- **Problem**: LLMs default to breathless travel-brochure praise, especially for geography, culture, or companies.
-- **Before**: *Nestled within the breathtaking region of Gonder in Ethiopia, Alamata Raya Kobo stands as a vibrant town with a rich cultural heritage and stunning natural beauty.*
-- **After**: *Alamata Raya Kobo is a town in the Gonder region of Ethiopia, known for its weekly market and 18th-century church.*
-
-#### 5. Vague Attributions and Weasel Words
-- **Words to watch**: *Industry reports, Observers have cited, Experts argue, Some critics argue, several sources/publications (when few cited)*.
-- **Problem**: AI attributes assertions to vague, disembodied authorities without named sources or evidence.
-- **Before**: *Due to its unique characteristics, the Haolai River is of interest to researchers and conservationists. Experts believe it plays a crucial role in the regional ecosystem.*
-- **After**: *The Haolai River supports several endemic fish species, according to a 2019 survey by the Chinese Academy of Sciences.*
-
-#### 6. Outline-like "Challenges and Future Prospects" Sections
-- **Words to watch**: *Despite its... faces several challenges..., Despite these challenges, Challenges and Legacy, Future Outlook*.
-- **Problem**: Formulaic balanced chapters that mechanically pair a problem with a sunny resolution.
-- **Before**: *Despite its industrial prosperity, Korattur faces challenges typical of urban areas, including traffic congestion and water scarcity. Despite these challenges, with its strategic location and ongoing initiatives, Korattur continues to thrive as an integral part of Chennai's growth.*
-- **After**: *Traffic congestion increased after 2015 when three new IT parks opened. The municipal corporation began a stormwater drainage project in 2022 to address recurring floods.*
+### Archetype 4: The Conversational Peer
+- **Best For**: Emails, Slack messages, social commentary, community posts.
+- **Tone**: Warm, approachable, authentic, informal. Speaks like a trusted colleague grabbing coffee.
+- **Cadence**: Casual rhythm, contractions, friendly cadence, zero pretension.
 
 ---
 
-### Language and Grammar Patterns
+## The 35 Anti-AI Patterns (The Blacklist)
 
-#### 7. Overused "AI Vocabulary" Words
-- **High-frequency AI markers**: *Actually, additionally, align with, crucial, delve, emphasizing, enduring, enhance, fostering, garner, highlight (verb), interplay, intricate/intricacies, key (adjective), landscape (abstract noun), pivotal, showcase, tapestry (abstract noun), testament, underscore (verb), valuable, vibrant*.
-- **Problem**: These words cluster together with statistical unnaturalness in post-2023 text.
-- **Before**: *Additionally, a distinctive feature of Somali cuisine is the incorporation of camel meat. An enduring testament to Italian colonial influence is the widespread adoption of pasta in the local culinary landscape, showcasing how these dishes have integrated into the traditional diet.*
-- **After**: *Somali cuisine also includes camel meat, which is considered a delicacy. Pasta dishes, introduced during Italian colonization, remain common, especially in the south.*
+Audit your text internally against these 35 machine patterns:
 
-#### 8. Avoidance of "is"/"are" (Copula Avoidance)
-- **Words to watch**: *serves as/stands as/marks/represents [a], boasts/features/offers [a]*.
-- **Problem**: LLMs reflexively avoid simple verbs like *is*, *are*, or *has*, preferring inflated action metaphors.
-- **Before**: *Gallery 825 serves as LAAA's exhibition space for contemporary art. The gallery features four separate spaces and boasts over 3,000 square feet.*
-- **After**: *Gallery 825 is LAAA's exhibition space for contemporary art. The gallery has four rooms totaling 3,000 square feet.*
+### High-Probability AI Vocabulary
+1. **The Classic AI Cliché Lexicon**: *delve, delving, tapestry, beacon, testament, landscape (abstract), multifaceted, foster, fostering, paramount, pivotal, crucial, underscore, realm, vibrant, embark, intricate, intricacies, seamless, seamlessly, holistic, elevate, harness, revolutionize, noteworthy, interplay, catalyst, cornerstone*.
+2. **Formulaic Transitions**: *Furthermore, Moreover, Additionally, In conclusion, It is important to note that, At the end of the day, Moving forward*.
+3. **Copula Avoidance (inflated action verbs instead of is/are/has)**: *serves as, stands as, marks a, represents a, boasts a, features a, offers a*.
+4. **Superficial "-ing" Tacks (synthetic philosophical depth appended to sentence ends)**: *", highlighting..."*, *", underscoring..."*, *", ensuring that..."*, *", reflecting the..."*, *", contributing to..."*, *", showcasing..."*.
+5. **Negative Parallelisms & Formulaic Contrasts**: *"It's not just about X, it's about Y"*; *"Not only does X do A, but it also does B"*; *", no guessing, no wasted motion"*.
+6. **Rule of Three Addiction**: Forcing observations or adjectives into neat trios (*"agile, scalable, and resilient"* / *"innovation, inspiration, and insight"*).
+7. **Elegant Variation (Synonym cycling)**: Mechanically rotating synonyms in adjacent sentences (*"The tool... The platform... The solution... The software..."*).
+8. **False Ranges**: *"from startups to Fortune 500s, from simple scripts to complex architectures"*.
+9. **Weasel Attributions**: *"Industry observers note..."*, *"Experts believe..."*, *"Many argue that..."*.
+10. **The "Challenges and Future Prospects" Template**: Balanced sandwiching of a minor challenge with an immediate sunny resolution (*"Despite these challenges, with continued innovation, X is poised to..."*).
 
-#### 9. Negative Parallelisms and Tailing Negations
-- **Problem**: Clichés like *"Not only... but also..."*, *"It's not just about X, it's about Y"*, or clipped sentence-end fragments like *", no guessing"* or *", no wasted motion"*.
-- **Before**: *It's not just about the beat riding under the vocals; it's part of the aggression and atmosphere. It's not merely a song, it's a statement.*
-- **After**: *The heavy beat adds to the aggressive tone.*
-- **Before (tailing negation)**: *The options come from the selected item, no guessing.*
-- **After**: *The options come from the selected item without forcing the user to guess.*
-
-#### 10. Rule of Three Overuse
-- **Problem**: Forcing observations, adjectives, or bullet points into rigid trios to sound rhetorical and complete.
-- **Before**: *The event features keynote sessions, panel discussions, and networking opportunities. Attendees can expect innovation, inspiration, and industry insights.*
-- **After**: *The event includes talks and panels. There's also time for informal networking between sessions.*
-
-#### 11. Elegant Variation (Synonym Cycling)
-- **Problem**: Repetition-penalty algorithms cause AI to artificially rotate synonyms for the same entity in adjacent sentences.
-- **Before**: *The protagonist faces many challenges. The main character must overcome obstacles. The central figure eventually triumphs. The hero returns home.*
-- **After**: *The protagonist faces many challenges but eventually triumphs and returns home.*
-
-#### 12. False Ranges
-- **Problem**: Using *"from X to Y"* constructions where X and Y are not points on a continuous or meaningful scale.
-- **Before**: *Our journey through the universe has taken us from the singularity of the Big Bang to the grand cosmic web, from the birth and death of stars to the enigmatic dance of dark matter.*
-- **After**: *The book covers the Big Bang, star formation, and current theories about dark matter.*
-
-#### 13. Passive Voice and Subjectless Fragments
-- **Problem**: Dropping the human actor or writing clipped subjectless statements (*"No configuration file needed"*).
-- **Before**: *No configuration file needed. The results are preserved automatically.*
-- **After**: *You do not need a configuration file. The system preserves the results automatically.*
-
----
-
-### Style Patterns
-
-#### 14. Em Dash Overuse
-- **Problem**: Spraying em dashes (—) across sentences to manufacture synthetic punchiness.
-- **Before**: *The term is primarily promoted by Dutch institutions—not by the people themselves. You don't say "Netherlands, Europe" as an address—yet this mislabeling continues—even in official documents.*
-- **After**: *The term is primarily promoted by Dutch institutions, not by the people themselves. You don't say "Netherlands, Europe" as an address, yet this mislabeling continues in official documents.*
-
-#### 15. Overuse of Boldface
-- **Problem**: Mechanically bolding key phrases inside sentences for artificial scanning.
-- **Before**: *It blends **OKRs** (Objectives and Key Results), **KPIs** (Key Performance Indicators), and **visual strategy tools**.*
-- **After**: *It blends OKRs, KPIs, and visual strategy tools like the Business Model Canvas.*
-
-#### 16. Inline-Header Vertical Lists
-- **Problem**: Turning regular explanations into vertical lists with bolded keyword headers followed by colons (`**Header**: Explanation`).
-- **Before**:
-  *User Experience: The user experience has been significantly improved.*  
-  *Performance: Performance has been enhanced through optimized algorithms.*  
-  *Security: Security has been strengthened with end-to-end encryption.*
-- **After**: *The update improves the interface, speeds up load times through optimized algorithms, and adds end-to-end encryption.*
-
-#### 17. Title Case in Headings
-- **Problem**: Capitalizing every word in section headings instead of natural sentence case.
-- **Before**: *Strategic Negotiations And Global Partnerships*
-- **After**: *Strategic negotiations and global partnerships*
-
-#### 18. Emojis
-- **Problem**: Decorating headers, lists, or section dividers with playful corporate emojis (🚀, 💡, ✅, 🔍).
-- **Before**: *🚀 Launch Phase: The product launches in Q3 💡 Key Insight: Users prefer simplicity.*
-- **After**: *The product launches in Q3. User research showed a preference for simplicity.*
-
-#### 19. Curly Quotation Marks
-- **Problem**: Pasting typographic curly quotes (“ ”) and apostrophes (’), a hallmark of ChatGPT raw output, instead of straight quotes (" ').
-- **Before**: *He said “the project is on track” but others disagreed.*
-- **After**: *He said "the project is on track" but others disagreed.*
+### Formatting & Syntax Tells
+11. **Em Dash Overuse**: Spraying `—` into every paragraph for synthetic drama.
+12. **Bolded Inline-Header Lists**: Mechanically formatting prose into `**Header**: Explanation` bullets instead of paragraphs.
+13. **Chatbot Courtesy Artifacts**: *"I hope this helps!"*, *"Great question!"*, *"Let me know if you'd like me to expand on..."*, *"Certainly!"*.
+14. **Hyphenated Word-Pair Overload**: *data-driven, client-facing, cross-functional, decision-making, real-time, end-to-end* chained together.
+15. **Persuasive Pretentions**: *"The real question is..."*, *"At its core..."*, *"What really matters is..."*, *"Fundamentally..."*.
+16. **Signposting Announcements**: *"Let's dive in"*, *"Let's explore"*, *"Here is what you need to know"*, *"Without further ado"*.
+17. **Title Case in Headings**: Capitalizing every word in headers instead of natural sentence case.
+18. **Decorative Corporate Emojis**: 🚀, 💡, ✅, 🔍, 📈 scattered across headers and bullet points.
+19. **Curly Quotes in Plaintext**: Typographic “curly quotes” from raw web paste.
+20. **Passive Subject Drops**: Clipped fragments missing human actors (*"Configuration file generated automatically."*).
+21. **Knowledge Cutoff Disclaimers**: *"As of my last update..."*, *"While specific details are scarce..."*.
+22. **Hallmark Card Endings**: Cheerful boilerplate conclusions (*"The future looks bright..."*, *"As we journey forward..."*).
+23. **Filler Wordiness**: *"In order to"* -> *"To"*; *"Due to the fact that"* -> *"Because"*; *"At this point in time"* -> *"Now"*; *"Has the ability to"* -> *"Can"*.
+24. **Excessive Modal Hedging**: *"It could potentially possibly be argued that..."*.
+25. **Sycophantic Flattery**: Over-validating the user or subject matter.
+26. **Unearned Poeticism**: Describing mundane technical systems as *choreographies, ballets, symphonies, dances*, or *mosaics*.
+27. **Universal Balanced Framing**: Giving equal weight to fringe or bad ideas just to appear neutral.
+28. **Fragmented Sentence-Header Restatements**: Heading followed by a one-line repeat of the heading before the paragraph begins.
+29. **Disembodied "We"**: Using corporate *"We"* when no company or group exists.
+30. **Symmetrical Paragraph Length**: Exactly three sentences in every single paragraph.
+31. **Mechanical Rhetorical Questions**: *"So, what does this mean for developers? It means..."*.
+32. **Superlative Inflation**: Calling standard tools *groundbreaking, revolutionary, game-changing, transformative*.
+33. **Passive-Aggressive Colon Headers**: Starting every bullet with an adjective-noun pair followed by a colon.
+34. **Token Predictability Sequences**: Common n-grams (*"plays a crucial role in shaping the future of"*, *"vital component of the modern ecosystem"*).
+35. **The "Remind Us" Trope**: *"Serves as a powerful reminder that..."*.
 
 ---
 
-### Communication Patterns
+## Voice Calibration (Matching User Style)
 
-#### 20. Collaborative Communication Artifacts
-- **Words to watch**: *I hope this helps, Of course!, Certainly!, You're absolutely right!, Would you like..., let me know, here is a...*
-- **Problem**: Chatbot pleasantries and correspondence artifacts pasted into deliverable text.
-- **Before**: *Here is an overview of the French Revolution. I hope this helps! Let me know if you'd like me to expand on any section.*
-- **After**: *The French Revolution began in 1789 when financial crisis and food shortages led to widespread unrest.*
-
-#### 21. Knowledge-Cutoff Disclaimers
-- **Words to watch**: *as of [date], Up to my last training update, While specific details are limited/scarce..., based on available information...*
-- **Problem**: AI epistemic defense mechanisms left behind in content.
-- **Before**: *While specific details about the company's founding are not extensively documented in readily available sources, it appears to have been established sometime in the 1990s.*
-- **After**: *The company was founded in 1994, according to its registration documents.*
-
-#### 22. Sycophantic / Servile Tone
-- **Problem**: People-pleasing, overly positive validation.
-- **Before**: *Great question! You're absolutely right that this is a complex topic. That's an excellent point about the economic factors.*
-- **After**: *The economic factors you mentioned are relevant here.*
+When a user provides their own writing sample:
+1. **Calculate Sample Metrics**:
+   - Mean sentence length and variance.
+   - Contraction frequency (high vs. none).
+   - Paragraph density (single lines vs. deep blocks).
+   - Punctuation quirks (parentheses, semicolons, dashes).
+   - Preferred slang or colloquial expressions.
+2. **Mirror the Quirks**:
+   - If they write in short, punchy 8-word bursts, write in 8-word bursts.
+   - If they use *"stuff"* and *"hacks"*, do not elevate to *"mechanisms"* and *"methodologies"*.
+   - If they don't use colons, don't use colons.
 
 ---
 
-### Filler and Hedging
+## Internal Self-Audit Protocol (Execute Silently in Thinking)
 
-#### 23. Filler Phrases
-- *"In order to achieve this goal"* $\rightarrow$ *"To achieve this"*
-- *"Due to the fact that it was raining"* $\rightarrow$ *"Because it was raining"*
-- *"At this point in time"* $\rightarrow$ *"Now"*
-- *"In the event that you need help"* $\rightarrow$ *"If you need help"*
-- *"The system has the ability to process"* $\rightarrow$ *"The system can process"*
-- *"It is important to note that the data shows"* $\rightarrow$ *"The data shows"*
+Before outputting your response, run this 4-step check in your mind:
 
-#### 24. Excessive Hedging
-- **Problem**: Stacking conditional modal verbs (*"It could potentially possibly be argued that..."*).
-- **Before**: *It could potentially possibly be argued that the policy might have some effect on outcomes.*
-- **After**: *The policy may affect outcomes.*
-
-#### 25. Generic Positive Conclusions
-- **Problem**: Vague, cheerful boilerplate endings (*"The future looks bright..."*).
-- **Before**: *The future looks bright for the company. Exciting times lie ahead as they continue their journey toward excellence.*
-- **After**: *The company plans to open two more locations next year.*
-
-#### 26. Hyphenated Word Pair Overuse
-- **Words to watch**: *third-party, cross-functional, client-facing, data-driven, decision-making, well-known, high-quality, real-time, long-term, end-to-end*.
-- **Problem**: AI hyphenates common compound words with 100% mechanical consistency, unlike real human writers.
-- **Before**: *The cross-functional team delivered a high-quality, data-driven report.*
-- **After**: *The cross functional team delivered a high quality, data driven report.*
-
-#### 27. Persuasive Authority Tropes
-- **Phrases to watch**: *The real question is, at its core, in reality, what really matters, fundamentally, the deeper issue, the heart of the matter*.
-- **Problem**: Feigning depth to restate an ordinary point with philosophical pretension.
-- **Before**: *The real question is whether teams can adapt. At its core, what really matters is organizational readiness.*
-- **After**: *The question is whether teams can adapt. That mostly depends on whether the organization is ready to change its habits.*
-
-#### 28. Signposting and Announcements
-- **Phrases to watch**: *Let's dive in, let's explore, let's break this down, here's what you need to know, now let's look at, without further ado*.
-- **Problem**: Announcing what you are about to say instead of just saying it.
-- **Before**: *Let's dive into how caching works in Next.js. Here's what you need to know.*
-- **After**: *Next.js caches data at multiple layers, including request memoization, the data cache, and the router cache.*
-
-#### 29. Fragmented Headers
-- **Problem**: A heading followed by a throwaway 1-line sentence restating the heading before the real paragraph starts.
-- **Before**:
-  *Performance*  
-  *Speed matters.*  
-  *When users hit a slow page, they leave.*
-- **After**:
-  *Performance*  
-  *When users hit a slow page, they leave.*
-
----
-
-## The Dual-Pass Recursive Rewrite Process
-
-Follow this exact sequence when humanizing text:
-
-1. **Read & Isolate**: Read input text, isolate core facts/numbers/mechanisms, and note all matching AI patterns.
-2. **Draft Rewrite**: Produce an initial humanized draft that breaks AI sentence uniformity and removes slop words.
-3. **Self-Audit**:
-   - Explicitly prompt: *"What makes the below so obviously AI generated?"*
-   - Answer in 2–4 concise bullet points identifying remaining tells (cadence still too neat, synthetic placeholders, uniform paragraph length, lingering jargon).
-4. **Final Anti-AI Pass**:
-   - Explicitly prompt: *"Now make it not obviously AI generated."*
-   - Produce the final humanized text.
-5. **Summary of Changes**: Briefly list what was removed, revoiced, or simplified.
-
----
-
-## Output Format
-
-When executing this skill, structure your response as:
-
-```markdown
-### 📝 Draft Rewrite
-[Initial humanized version]
-
-### 🔍 Self-Audit: What makes the above still obviously AI generated?
-- [Tell 1: e.g., Rhythm is still too tidy]
-- [Tell 2: e.g., Concluding sentence still leans slogan-y]
-
-### ✍️ Final Rewrite (After Anti-AI Audit)
-[Final humanized prose with soul, authentic cadence, and zero semantic drift]
-
-### 🧹 Changes Made
-- Removed [specific pattern]
-- Replaced [AI-ism] with [concrete phrasing]
 ```
+[THINKING ONLY]
+1. Burstiness Check: Do I have at least two sentences under 6 words? Do I have at least one multi-clause sentence over 25 words? Is the rhythm irregular?
+2. Pattern Scan: Did any of the 35 banned words/phrases slip through?
+3. Architecture Check: Did I include a generic intro sentence or a Hallmark conclusion? If yes, delete them.
+4. Voice Check: Does this sound like a living human with opinions and experience, or a polite LLM wearing a trench coat?
+```
+
+Then output **only the clean, finalized human text**.\n
