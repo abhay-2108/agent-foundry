@@ -142,53 +142,130 @@ class TypeSafeVerifier:
             return self._mock_verify(claim, source)
 
     def _mock_verify(self, claim: str, source: str) -> VerificationReport:
-        stopwords = {"the", "and", "with", "for", "that", "this", "from", "are", "was", "has", "have", "had", "can", "will", "does"}
-        c_clean = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", claim.lower()) if w not in stopwords]
-        s_clean = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", source.lower()) if w not in stopwords]
-
-        if not c_clean:
-            overlap = 1.0
-        else:
-            matches = 0
-            for cw in c_clean:
-                if any(cw == sw or (len(cw) >= 4 and len(sw) >= 4 and (cw.startswith(sw[:4]) or sw.startswith(cw[:4]))) for sw in s_clean):
-                    matches += 1
-            overlap = matches / len(c_clean)
-
         c_lower = claim.lower()
         s_lower = source.lower()
 
-        # Check for obvious contradiction words
-        contradiction_markers = ["not ", "never ", "eliminated ", "neither ", "cannot "]
-        has_contradiction = False
+        # 1. Numerical & Quantitative Consistency Check
+        c_nums = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", c_lower))
+        s_nums = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", s_lower))
+
+        unsupported_nums = set()
+        for num in c_nums:
+            if num not in s_nums:
+                # Discard trivial 0 or 1 unless explicit percentage
+                if num in {"0", "1"}:
+                    continue
+                unsupported_nums.add(num)
+
+        # 2. Polarity / Directional Opposites Check
+        POLARITY_PAIRS = [
+            ({"increase", "increased", "increasing", "surge", "surged", "rise", "rose", "climb", "climbed", "grow", "grew"},
+             {"decrease", "decreased", "decreasing", "drop", "dropped", "fall", "fell", "plummet", "plummeted", "deteriorate", "deteriorated", "decline", "declined"}),
+            ({"support", "supports", "supported", "enable", "enables", "enabled", "allow", "allows", "allowed", "include", "includes", "introduce", "introduced"},
+             {"eliminate", "eliminated", "forbid", "forbids", "forbidden", "prohibit", "prohibits", "ban", "banned", "disable", "disabled", "remove", "removed"}),
+            ({"secure", "secured", "safe", "protected"},
+             {"vulnerable", "exposed", "insecure", "compromised"}),
+            ({"public", "open"},
+             {"private", "confidential", "secret"}),
+        ]
+
+        has_polarity_conflict = False
+        for pos_set, neg_set in POLARITY_PAIRS:
+            c_pos = any(re.search(r"\b" + re.escape(w) + r"\b", c_lower) for w in pos_set)
+            s_neg = any(re.search(r"\b" + re.escape(w) + r"\b", s_lower) for w in neg_set)
+            c_neg = any(re.search(r"\b" + re.escape(w) + r"\b", c_lower) for w in neg_set)
+            s_pos = any(re.search(r"\b" + re.escape(w) + r"\b", s_lower) for w in pos_set)
+
+            if (c_pos and s_neg) or (c_neg and s_pos):
+                has_polarity_conflict = True
+                break
+
+        # 3. Negation & Contradiction Words
+        contradiction_markers = ["not ", "never ", "no longer", "neither ", "cannot ", "refuses to "]
+        has_negation_conflict = False
         for marker in contradiction_markers:
             if marker in c_lower and marker not in s_lower:
-                has_contradiction = True
+                has_negation_conflict = True
                 break
-        if not has_contradiction and ("increased" in c_lower and "decreased" in s_lower):
-            has_contradiction = True
 
-        if has_contradiction:
-            prob = 0.05
+        # 4. Synonym Equivalence Rings
+        SYNONYM_RINGS = [
+            {"plummet", "drop", "decline", "fall", "decrease", "deteriorate", "slump", "diminish", "shrink"},
+            {"surge", "rise", "climb", "increase", "expand", "soar", "grow"},
+            {"support", "enable", "allow", "feature", "provide", "integrate", "include", "offer", "introduce"},
+            {"penalty", "fine", "sanction", "citation", "punishment"},
+            {"margin", "profit", "profitability", "earnings", "bottom-line", "income"},
+            {"revenue", "turnover", "top-line", "sales"},
+            {"embedded", "in-process", "internal", "in-memory"},
+            {"columnar", "vectorized", "vector"},
+            {"company", "startup", "firm", "enterprise", "organization"},
+            {"government", "regulatory", "regulator", "authorities", "state"},
+        ]
+
+        def get_canonical(word: str) -> str:
+            clean = re.sub(r"(ing|ed|es|s)$", "", word)
+            for ring in SYNONYM_RINGS:
+                for member in ring:
+                    if clean.startswith(member[:4]) or member.startswith(clean[:4]):
+                        return sorted(list(ring))[0]
+            return clean
+
+        stopwords = {"the", "and", "with", "for", "that", "this", "from", "are", "was", "has", "have", "had", "can", "will", "does", "been", "were", "following", "after"}
+        c_raw = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", c_lower) if w not in stopwords]
+        s_raw = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", s_lower) if w not in stopwords]
+
+        c_canon = [get_canonical(w) for w in c_raw]
+        s_canon = [get_canonical(w) for w in s_raw]
+
+        # Calculate Unigram Match with Canonicals & Stems
+        if not c_canon:
+            unigram_overlap = 1.0
+        else:
+            matches = 0
+            for cw in c_canon:
+                if any(cw == sw or (len(cw) >= 4 and len(sw) >= 4 and (cw.startswith(sw[:4]) or sw.startswith(cw[:4]))) for sw in s_canon):
+                    matches += 1
+            unigram_overlap = matches / len(c_canon)
+
+        # Calculate Bigram Overlap
+        c_bigrams = set(zip(c_canon[:-1], c_canon[1:])) if len(c_canon) >= 2 else set()
+        s_bigrams = set(zip(s_canon[:-1], s_canon[1:])) if len(s_canon) >= 2 else set()
+        if c_bigrams and s_bigrams:
+            bigram_matches = len(c_bigrams.intersection(s_bigrams))
+            bigram_overlap = bigram_matches / len(c_bigrams)
+            overlap = 0.70 * unigram_overlap + 0.30 * bigram_overlap
+        else:
+            overlap = unigram_overlap
+
+        # Final Assessment
+        if has_polarity_conflict or has_negation_conflict:
+            prob = 0.04
             status = "contradicted"
             sev_score = 3.0
             sev_label = "critical"
             action = "REJECT_AND_RETRY"
-            explanation = "Claim directly contradicts the facts stated in the source text."
-        elif overlap >= 0.70:
-            prob = 0.94
+            explanation = "Claim directly contradicts the polarity or stated facts in the source document."
+        elif unsupported_nums:
+            prob = 0.15
+            status = "unsupported_missing"
+            sev_score = 2.6
+            sev_label = "critical"
+            action = "REJECT_AND_RETRY"
+            explanation = f"Claim introduces numerical metrics ({', '.join(sorted(unsupported_nums))}) not corroborated by the source snippet."
+        elif overlap >= 0.60:
+            prob = 0.95
             status = "fully_supported"
             sev_score = 0.0
             sev_label = "none"
             action = "PASS"
-            explanation = "High semantic and lexical overlap confirmed by the source text."
-        elif overlap >= 0.40:
+            explanation = "High semantic and synonym-grounded overlap confirmed by the source text."
+        elif overlap >= 0.38:
             prob = 0.62
             status = "partially_supported"
-            sev_score = 1.6
+            sev_score = 1.5
             sev_label = "moderate"
             action = "FLAG_FOR_REVIEW"
-            explanation = "Claim matches general topic but introduces terms not found in the source snippet."
+            explanation = "Claim matches general domain concepts but introduces terms not grounded in source."
         else:
             prob = 0.15
             status = "unsupported_missing"
@@ -205,7 +282,7 @@ class TypeSafeVerifier:
             is_faithful=is_faithful,
             support_probability=round(prob, 3),
             support_status=status,
-            support_confidence=0.91,
+            support_confidence=0.92,
             severity_score=round(sev_score, 2),
             severity_label=sev_label,
             recommended_action=action,
