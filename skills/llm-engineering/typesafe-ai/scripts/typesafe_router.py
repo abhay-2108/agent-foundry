@@ -78,9 +78,38 @@ class RouteDecision:
     raw_probabilities: Dict[str, Any] = field(default_factory=dict)
 
 
+def resolve_typesafe_key(explicit_key: Optional[str] = None) -> Optional[str]:
+    """Finds TYPESAFE_API_KEY from argument, os.environ, local .env, or global ~/.gemini/.env."""
+    if explicit_key and explicit_key.strip():
+        return explicit_key.strip()
+
+    env_val = os.environ.get("TYPESAFE_API_KEY")
+    if env_val and env_val.strip():
+        return env_val.strip()
+
+    candidate_files = [
+        os.path.join(os.getcwd(), ".env"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
+        os.path.expanduser(r"~\.gemini\.env"),
+    ]
+    for env_path in candidate_files:
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("TYPESAFE_API_KEY="):
+                            val = line.split("=", 1)[1].strip().strip("\"'")
+                            if val:
+                                return val
+            except Exception:
+                pass
+    return None
+
+
 class TypeSafeRouter:
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.environ.get("TYPESAFE_API_KEY")
+        self.api_key = resolve_typesafe_key(api_key)
         self._client = None
         self._init_client()
 
