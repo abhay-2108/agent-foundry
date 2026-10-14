@@ -1,37 +1,17 @@
 ---
 name: human-writer
-description: >-
-  Transform AI-generated drafts, synthetic text, or robotic outlines into natural,
-  engaging, voice-driven human prose, or write original human-grade copy. Features a
-  Dual-Mode Engine (Marketing/Persuasive vs. Reference/Technical), strict No-Fabrication
-  guardrails, Inverted Pyramid (punchline first), asymmetric sentence burstiness (1-30 word rule),
-  User Sample Supremacy for voice matching, SEO/CTA preservation, and elimination of the
-  35 known AI patterns without leaking robotic output scaffolding or emojis.
+description: Use this skill when transforming AI-generated text into authentic, natural,
+  voice-driven human prose using the 29 anti-patterns and 1-30 burstiness rule.
 ---
 
 # Human Writer & Anti-AI Prose Engine (v2.0)
 
-Transforms synthetic, sanitized AI drafts into authentic, rhythmic, voice-driven human prose.
+## Overview
 
-Most "humanizer" tools fail because they only do **negative filtering**—swapping banned words like *"delve"* for *"explore"* while keeping the exact same machine cadence, flat sentence lengths, and polite corporate symmetry. Even worse, generic humanizers often butcher marketing and web copy by stripping out persuasive hooks, SEO keywords, and calls to action.
+Transforms synthetic, robotic AI text into natural, voice-driven human prose. Enforces a Dual-Mode Engine (Marketing vs. Reference), strict No-Fabrication rules, Inverted Pyramid framing, asymmetric sentence burstiness (1–30 words), and eliminates 35 known AI cliches without leaking robotic scaffolding.
 
-This engine enforces **positive human mechanics**, operates across **two distinct modes** (Marketing vs. Reference), enforces an ironclad **No-Fabrication** rule, and leads with the **punchline**.
+## When to Use
 
----
-
-## Prime Directive: Clean Output by Default
-
-> [!IMPORTANT]
-> **NO AI SCAFFOLDING IN OUTPUT.**
-> When a user requests text to be humanized or written:
-> 1. **DO NOT** output multi-stage meta-commentary like `### 📝 Draft Rewrite`, `### 🔍 Self-Audit`, `### ✍️ Final Rewrite`, or `### 🧹 Changes Made`.
-> 2. **DO NOT** use decorative emojis in headings (🚀, 💡, 📝, 🔍, ✍️).
-> 3. **DO NOT** explain your process unless the user explicitly asks (`"explain what you changed"` or `"show the audit"`).
-> 4. **DELIVER THE FINAL, POLISHED HUMAN PROSE DIRECTLY.** All auditing, pattern-matching, and burstiness verification must happen internally inside your reasoning/thinking.
-
----
-
-## When to Use This Skill
 - Rewriting AI-generated essays, technical documentation, marketing blogs, landing pages, LinkedIn posts, newsletters, emails, or sales copy.
 - Eliminating robotic tone, corporate jargon, or textbook explanations.
 - Bypassing AI detection patterns (GPTZero, Copyleaks, Turnitin, Originality.ai) by mathematically varying sentence lengths (burstiness) and vocabulary entropy (perplexity).
@@ -39,6 +19,9 @@ This engine enforces **positive human mechanics**, operates across **two distinc
 - **Triggers**: `"humanize this"`, `"make this sound human"`, `"de-slop this"`, `"remove AI tone"`, `"write like a human"`, `"make this less robotic"`.
 
 ---
+- **When NOT to use**: Writing machine-parseable JSON API specs (use `prompt-architect`) or strictly technical code comments.
+
+## Core Process & Prose Engineering Engine
 
 ## The 6 Core Humanizer Principles
 
@@ -187,3 +170,27 @@ Before outputting your response, run this 5-step checklist silently in your mind
 ```
 
 Then output **only the clean, finalized human text**.\n
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| *"Replacing 'delve' and 'testament' with synonyms is enough to humanize text."* | Surface synonym swapping leaves the robotic cadence, uniform sentence lengths, and corporate symmetry untouched; sentence burstiness and attitude are required. |
+| *"Inventing a compelling case study makes the writing more persuasive."* | Fabricating customer names, metrics, or anecdotes destroys credibility and violates ethical and legal standards; enforce strict zero-fabrication. |
+| *"Marketing copy should always be understated and academic."* | Marketing copy must lead with hooks, highlight emotional pain points, and drive explicit CTAs, while technical reference mode remains objective. |
+| *"Emojis and bold lists make the writing friendly and approachable."* | Excessive rocket emojis (🚀), checkmark lists, and bold summaries are the most obvious fingerprints of synthetic AI output. |
+
+## Red Flags
+
+- Monotonous sentence lengths (every sentence between 14-18 words without rhythmic variation).
+- Classic AI vocabulary tropes: 'delve', 'testament', 'tapestry', 'beacon', 'unleash', 'pivotal'.
+- Concluding with generic summaries starting with 'In conclusion,' 'Ultimately,' or 'As we look to the future'.
+- Fabricating fictitious metrics or quotes when source data is missing.
+
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Sentence lengths vary organically (ranging from punchy 1-word fragments to 30-word complex thoughts).
+- [ ] The 35 known AI vocabulary cliches are completely absent.
+- [ ] Marketing text preserves target keywords, value propositions, and explicit CTAs.
+- [ ] De-slop analyzer verification passes: `python skills/writing-and-research/human-writer/scripts/de_slop_analyzer.py --file <draft.md>`.

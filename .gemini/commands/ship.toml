@@ -1,0 +1,2 @@
+description = "Parallel release gate: concurrently runs code review, security scan, and build verification."
+prompt = "Use the sre-devops-guardian workflow to: $ARGUMENTS"

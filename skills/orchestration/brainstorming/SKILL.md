@@ -1,21 +1,25 @@
 ---
 name: brainstorming
-description: >-
-  Use this skill before writing code, designing features, or starting new projects.
-  Refines rough or ambiguous ideas through structured Socratic inquiry, explores multiple
-  creative alternatives, evaluates trade-offs, and produces actionable design specifications.
+description: Use this skill when refining rough or ambiguous ideas through structured
+  Socratic inquiry, exploring design alternatives, and evaluating architectural trade-offs.
 ---
 
 # Brainstorming & Idea Incubator
 
-A structured, collaborative thinking skill that turns rough sparks, ambiguous user ideas, and high-level requirements into clear, validated concept designs before a single line of code is written.
+## Overview
 
-## When to Use This Skill
+Refines rough, ambiguous, or unformed ideas through structured Socratic inquiry. Explores creative architectural alternatives, evaluates trade-offs across feasibility, viability, and desirability, and produces actionable design specifications.
+
+## When to Use
+
 - At the inception of a new project, feature, architecture, or workflow.
 - When the user shares a loose, half-baked, or exploratory idea (`"I'm thinking about building X"`).
 - When there are multiple viable technical or product directions with distinct trade-offs.
 - When looking to challenge assumptions, find blind spots, or explore creative solutions.
 - Trigger phrases: `"brainstorm with me"`, `"help me think through this"`, `"explore ideas for X"`, `"how should I approach this?"`, `"what are some alternatives?"`.
+- **When NOT to use**: Executing pre-approved engineering implementations (use `fullstack-engineer` or `plan-and-execute`).
+
+## Core Process & Socratic Idea Incubation
 
 ## Core Brainstorming Principles
 1. **Diverge Before You Converge**: First expand the solution space with multiple diverse angles; only then evaluate and narrow down to the best approach.
@@ -98,22 +102,26 @@ Once an approach is selected, summarize the vision into a structured concept bri
 - Transition to **`plan-and-execute`** to generate the step-by-step task breakdown.
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"The first idea is usually the best one, so we should start coding immediately."* | Jumping into the first solution anchors on obvious patterns; exploring 3 distinct architectural alternatives reveals hidden constraints early. |
+| *"Brainstorming doesn't need constraints; anything goes."* | Unconstrained brainstorming produces un-shippable fantasies; creative divergence must be bounded by technical and budget realities. |
+| *"User trade-offs can be figured out during implementation."* | Discovering fundamental UX or architectural trade-offs mid-implementation causes massive rework and thrown-away code. |
+| *"Pros and cons lists are sufficient for decision making."* | Simple pros/cons lists treat all factors equally; structured multi-criteria decision matrices weigh impact against engineering effort. |
 
-1. **Premature Convergence (The First-Idea Trap)**: Instantly locking onto the first architectural option mentioned and jumping directly into implementation. Always diverge first: force the exploration of at least 3 distinct conceptual angles (e.g., minimalist, battle-tested standard, novel decoupled approach).
-2. **The Strawman Illusion**: Presenting one real proposal alongside two intentionally absurd alternatives (e.g., "Option B: Store everything in a flat text file on a floppy disk"). All presented alternatives must represent genuine, viable design trade-offs.
-3. **Premature Over-Engineering**: Proposing distributed microservices, event streaming, and Kubernetes clusters for an internal tool with 5 daily users. Calibrate architectural complexity strictly to the operational constraints.
-4. **Sycophantic Agreement**: Blindly endorsing a user's initial flawed assumption without diplomatically surfacing technical debt, security hazards, or edge-case costs. A great brainstorming partner challenges assumptions thoughtfully.
+## Red Flags
 
----
+- Starting implementation on ambiguous requirements without presenting alternative design options.
+- Failing to ask clarifying questions when user specifications contain obvious contradictions.
+- Presenting three 'alternatives' that are just cosmetic variations of the same underlying architecture.
+- Ending a brainstorm session without concrete next steps, assigned tasks, or measurable milestones.
 
-## Quality Checklist
+## Verification
 
-- [ ] Problem statement and non-functional constraints (latency, cost, scale) are clearly established.
-- [ ] At least 3 distinct architectural alternatives are explored with explicit trade-off comparisons.
-- [ ] Solutions are evaluated against concrete dimensions: build complexity, maintenance overhead, and failure modes.
-- [ ] Architectural blind spots and second-order risks are explicitly documented with mitigations.
-- [ ] User alignment is established on the chosen direction before generating technical implementation plans.
-- [ ] Output provides a crisp Concept Design Brief ready for handover to `plan-and-execute`.
+After completing the workflow, confirm:
+- [ ] Explores at least 3 distinct conceptual or architectural approaches.
+- [ ] Multi-criteria decision matrix scores alternatives across complexity, latency, cost, and developer velocity.
+- [ ] Key trade-offs and non-goals are explicitly documented.
+- [ ] Brainstorming session concludes with a structured implementation proposal ready for `plan-and-execute`.

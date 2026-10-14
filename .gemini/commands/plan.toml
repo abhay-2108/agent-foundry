@@ -1,0 +1,2 @@
+description = "Decompose goals into DAG implementation plans with rollback checkpoints."
+prompt = "Use the plan-and-execute workflow to: $ARGUMENTS"

@@ -9,11 +9,11 @@ description: >-
 
 # Vector Database Architect & ANN Index Optimization
 
-Acts as a Lead Vector Database Architect & Retrieval Systems Engineer. Designs, tunes, and sizes production vector storage engines for semantic search, agentic RAG, and high-dimensional clustering. Masterfully balances the three-way trade-off between **Recall Accuracy**, **Query Latency (QPS)**, and **Memory (RAM) Footprint**.
+## Overview
 
----
+Designs, sizes, tunes, and optimizes vector databases and Approximate Nearest Neighbor (ANN) index architectures across pgvector, Qdrant, Pinecone, and Milvus. Balances recall, latency, memory consumption, and scalar filtering.
 
-## When to Use This Skill
+## When to Use
 
 - When selecting or tuning vector index algorithms (HNSW vs. IVFFlat vs. Flat).
 - When configuring index build and search hyperparameters (`M`, `ef_construction`, `ef_search`, `lists`, `probes`).
@@ -24,6 +24,9 @@ Acts as a Lead Vector Database Architect & Retrieval Systems Engineer. Designs, 
 - Trigger phrases: `"tune vector index"`, `"pgvector setup"`, `"hnsw index optimization"`, `"vector database sizing"`, `"vector search indexing"`, `"qdrant schema"`, `"vector quantization"`, `"multi-tenant vector search"`.
 
 ---
+- **When NOT to use**: Pure full-text BM25 search without semantic vectors (use `workspace-researcher` or `hybrid_retriever_server`), or general relational SQL indexing (use `backend-architecture`).
+
+## Core Process & Vector Index Optimization Workflow
 
 ## The Vector Indexing Architecture
 
@@ -152,25 +155,26 @@ $$\text{Total RAM (with OS & Buffer Margin)} = (\text{Vector RAM} + \text{Graph 
 - Graph Overhead: $10^6 \times 32 \times 2 \times 8 \approx 0.51 \text{ GB}$
 - Total with 30% margin: $(6.14 + 0.51) \times 1.30 \approx \mathbf{8.65 \text{ GB RAM}}$
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Hard Guardrails
+| Rationalization | Reality |
+|---|---|
+| *"Default HNSW parameters (`m=16`, `ef_construction=64`) work for every dataset."* | Default HNSW parameters yield substandard recall on high-dimensional vectors (1536d+) or crash under heavy concurrency without memory tuning. |
+| *"Quantization isn't necessary because RAM is cheap."* | Unquantized FP32 vectors for 10M embeddings require 60GB+ of dedicated RAM; scalar/product quantization reduces memory footprint by 75-90% with minimal recall loss. |
+| *"Post-filtering in memory after ANN search is fast enough."* | Post-filtering after ANN search drops valid candidate counts drastically; pre-filtering or native payload-filtered HNSW graphs are required for strict metadata queries. |
+| *"Re-indexing isn't needed after bulk upserts."* | Bulk upserting millions of vectors degrades graph connectivity; index rebuilds or optimized background compaction must be scheduled. |
 
-- 🚫 **Never build HNSW indexes during bulk data ingestion**: Bulk insert without indexes first, then build the HNSW index in a single batch. Building HNSW incrementally row-by-row causes index fragmentation and takes 10x longer.
-- 🚫 **Never use Naive Post-Filtering for restrictive metadata**: Always use filtered ANN or separate tenant partitions.
-- 🚫 **Never query raw Cosine similarity on non-normalized vectors without cosine ops**: If using inner product ops (`<#>`), vectors must be unit-normalized first.
-- 🚫 **Never leave `ef_search` at default (10)**: Tune `ef_search` between 40 and 80 in production to achieve $>98\%$ recall.
+## Red Flags
 
----
+- Running unindexed vector similarity searches (`ORDER BY embedding <=> query_vector`) on tables with >100,000 rows.
+- Pairing cosine similarity distance metrics with un-normalized vector embeddings.
+- Selecting IVFFlat indexes without having enough training centroids for cluster distribution.
+- Failing to partition multi-tenant vector collections by tenant namespace, causing security boundary leaks.
 
-## Verification & CLI Tooling
+## Verification
 
-Use the companion script [`vector_index_toolkit.py`](./scripts/vector_index_toolkit.py) to calculate RAM sizing, benchmark SQ8 quantization recall, and simulate filtered ANN search:
-
-```bash
-# Run self-test suite
-python skills/database-and-data-engineering/vector-database-architect/scripts/vector_index_toolkit.py --test
-
-# Calculate hardware & RAM sizing
-python skills/database-and-data-engineering/vector-database-architect/scripts/vector_index_toolkit.py size --count 500000 --dim 1536 --m 32 --quantization sq8
-```
+After completing the workflow, confirm:
+- [ ] Distance metric (Cosine, Dot Product, Euclidean) strictly matches embedding model normalization requirements.
+- [ ] HNSW index parameters (`m`, `ef_search`, `ef_construction`) are benchmarked for target recall (>95%) and p99 latency (<20ms).
+- [ ] Vector compression (SQ8 / PQ) is applied and sized within memory budget constraints.
+- [ ] Hybrid search tests verify that metadata scalar filters combine cleanly with vector retrieval.

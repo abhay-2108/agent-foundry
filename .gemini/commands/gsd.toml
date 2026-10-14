@@ -1,0 +1,2 @@
+description = "Break down multi-day projects into structured milestones and vertical slices."
+prompt = "Use the get-shit-done workflow to: $ARGUMENTS"

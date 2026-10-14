@@ -10,9 +10,12 @@ description: >-
 
 # Feature Engineering Pipeline & Preprocessing Engine
 
-Acts as a Senior ML Engineer. Transforms raw, messy columns into high-signal numerical feature vectors that tree models, linear models, and neural networks can consume safely — with zero data leakage guaranteed through Pipeline encapsulation.
+## Overview
 
-## When to Use This Skill
+Designs, constructs, and validates machine learning feature engineering pipelines. Constructs leakage-safe transformations: cyclical datetime sin/cos encoding, empirical Bayes smoothed target encoding, interaction terms, and missing indicators using Scikit-Learn Pipelines.
+
+## When to Use
+
 - When transforming raw columns into high-signal numerical representations for ML models.
 - When encoding datetime fields (hour, day of week, cyclical sin/cos transformations).
 - When handling high-cardinality categorical features (Target Encoding, Frequency Encoding, WoE).
@@ -22,6 +25,9 @@ Acts as a Senior ML Engineer. Transforms raw, messy columns into high-signal num
 - Trigger phrases: `"feature engineering"`, `"create features"`, `"encode categories"`, `"cyclical encoding"`, `"build ML pipeline"`, `"target encoding"`, `"interaction terms"`, `"preprocessing pipeline"`.
 
 ---
+- **When NOT to use**: Deploying models to production Kubernetes clusters (use `sre-devops-guardian`).
+
+## Core Process & Feature Engineering Pipeline Architecture
 
 ## The Cardinal Rule: Zero Data Leakage
 
@@ -250,25 +256,26 @@ def build_preprocessing_pipeline(numeric_cols, low_card_cat_cols, high_card_cat_
 - ⚠️ `signup_date` raw string — converted to 3 cyclical features
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Fitting scalers and encoders on the entire dataset before train/test split is harmless."* | Fitting transformations on test data causes catastrophic data leakage, leading to optimistic validation scores that fail in production. |
+| *"One-hot encoding is suitable for high-cardinality categories with 10,000 values."* | One-hot encoding high-cardinality features causes severe curse of dimensionality and memory exhaustion; use target encoding or embedding layers. |
+| *"Tree models automatically capture cyclical time features."* | Trees treat hour 23 and hour 0 as opposite extremes; sin/cos cyclical transformations are required for circular features. |
+| *"Features can be passed as raw column names without a unified pipeline object."* | Loose feature transformation scripts break during inference serving; packaging transformers inside `sklearn.pipeline.Pipeline` is non-negotiable. |
 
-1. **Leaking Target Into Features** — Naïve `groupby(category)["target"].mean()` on the full dataset leaks the answer. **Fix**: Use K-fold out-of-sample target encoding or empirical Bayes smoothing fitted only on `X_train`.
-2. **Linear Encoding of Cyclical Variables** — `hour_of_day = 23` and `hour_of_day = 0` appear maximally different numerically but are actually adjacent. **Fix**: Always use sin/cos projection for periodic features.
-3. **Fitting `ColumnTransformer` Outside the Pipeline** — Calling `preprocessor.fit_transform(X)` before `train_test_split()`. **Fix**: Chain the preprocessor inside `Pipeline([("prep", preprocessor), ("model", clf)])` and fit only on training data.
-4. **OneHot on High-Cardinality Columns** — OneHot-encoding a column with 10,000 unique cities creates 10,000 sparse binary columns, causing memory explosions and generalization failures. **Fix**: Use frequency encoding or target encoding for columns with cardinality > 50.
-5. **Dropping Missing Indicator Before Imputation** — Imputing missing values without first recording which cells were missing discards the missingness signal. **Fix**: Call `add_missing_indicators()` before any imputation step.
+## Red Flags
 
----
+- Calling `.fit_transform()` on test or validation splits instead of calling `.transform()`.
+- Target encoding without smoothing or K-fold out-of-fold regularization (causes target leakage).
+- Generating interaction features that blow up dimensionality without variance threshold filtering.
+- Feature transformation logic written in ad-hoc notebooks that cannot be imported into production APIs.
 
-## Quality Checklist
+## Verification
 
-- [ ] `add_missing_indicators()` called before any imputation step
-- [ ] All periodic temporal features encoded with sin/cos (not raw integers)
-- [ ] Target encoding uses smoothing with `__global_mean__` fallback for unseen categories
-- [ ] All transformers fitted strictly on `X_train`; `.transform()` only applied to `X_test`
-- [ ] High-cardinality columns (> 50 unique values) use frequency or target encoding, not OHE
-- [ ] Interaction terms only generated between domain-justified feature pairs
-- [ ] Final feature count documented in Feature Engineering Audit output
-- [ ] Companion script `feature_pipeline.py --test` passes with zero errors
+After completing the workflow, confirm:
+- [ ] All transformers implement `fit` and `transform` and fit strictly on training splits.
+- [ ] Target encoding employs empirical Bayes smoothing with out-of-fold isolation.
+- [ ] Cyclical features (hour, day of week, month) are encoded with sin/cos transformations.
+- [ ] Pipeline serializes cleanly and produces identical feature column schemas on inference payloads.

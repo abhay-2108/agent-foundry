@@ -31,33 +31,6 @@ if sys.stderr and hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
-def resolve_typesafe_key(api_key: Optional[str] = None) -> Optional[str]:
-    """Finds TYPESAFE_API_KEY from argument, os.environ, or .env files."""
-    if api_key:
-        return api_key
-    env_val = os.environ.get("TYPESAFE_API_KEY")
-    if env_val:
-        return env_val
-    candidate_files = [
-        os.path.join(os.getcwd(), ".env"),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
-        os.path.expanduser(r"~\.gemini\.env"),
-    ]
-    for env_path in candidate_files:
-        if os.path.exists(env_path):
-            try:
-                with open(env_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("TYPESAFE_API_KEY="):
-                            val = line.split("=", 1)[1].strip().strip("\"'")
-                            if val:
-                                return val
-            except Exception:
-                pass
-    return None
-
-
 # ======================================================================
 # Tier 1: Working Memory (Transient In-Context Scratchpad)
 # ======================================================================
@@ -390,60 +363,7 @@ class PersistentAgentMemory:
                 "mode": "deterministic"
             }
 
-        # Live TypeSafe / Jev System One check
-        api_key = resolve_typesafe_key()
-        if api_key:
-            try:
-                from typesafe_sdk import TypeSafeClient, Noul, Choice
-                client = TypeSafeClient(api_key=api_key)
-                state = {
-                    "category": category,
-                    "existing_fact": existing_text,
-                    "proposed_update": new_text
-                }
-                questions = {
-                    "is_contradiction": Noul(
-                        instructions="Does the proposed_update directly contradict, violate, or negate the existing_fact?"
-                    ),
-                    "relationship": Choice(
-                        options=["compatible_refinement", "direct_contradiction", "divergent_scope"],
-                        criteria=[
-                            "The update refines, extends, or details the existing fact without violating it",
-                            "The update explicitly opposes, disables, or reverses what the existing fact states",
-                            "The update discusses a different context or component entirely"
-                        ]
-                    )
-                }
-                pred = client.system_one(questions, state=state)
-                contra_prob = 0.0
-                if hasattr(pred, "answers") and "is_contradiction" in pred.answers:
-                    contra_prob = getattr(pred.answers["is_contradiction"], "probability", 0.0)
-                elif isinstance(pred, dict) and "is_contradiction" in pred:
-                    ans = pred["is_contradiction"]
-                    contra_prob = getattr(ans, "probability", ans if isinstance(ans, (int, float)) else 0.0)
-
-                rel_choice = "compatible_refinement"
-                if hasattr(pred, "answers") and "relationship" in pred.answers:
-                    rel_choice = getattr(pred.answers["relationship"], "answer", "compatible_refinement")
-                elif isinstance(pred, dict) and "relationship" in pred:
-                    ans = pred["relationship"]
-                    rel_choice = getattr(ans, "answer", str(ans))
-
-                is_disputed = (contra_prob >= 0.60) or (rel_choice == "direct_contradiction")
-
-                return {
-                    "is_consistent": not is_disputed,
-                    "status": "contradiction" if is_disputed else "refinement",
-                    "disputed": is_disputed,
-                    "confidence": round(contra_prob if is_disputed else (1.0 - contra_prob), 4),
-                    "matched_key": existing_key,
-                    "reason": f"Live Jev evaluation: {'Contradiction detected against existing fact' if is_disputed else 'Compatible refinement of existing fact'} ('{existing_text[:80]}...').",
-                    "mode": "live"
-                }
-            except Exception:
-                pass
-
-        # Offline heuristic fallback
+        # Offline consistency check (lexical & semantic heuristic)
         return self._offline_check_consistency(existing_key, existing_text, new_text)
 
     def _offline_check_consistency(self, existing_key: str, existing_text: str, new_text: str) -> Dict[str, Any]:
@@ -774,7 +694,7 @@ def run_self_test() -> int:
     assert poison_res2["disputed"] is True, f"Expected direct key overwrite poison attempt to be disputed, got {poison_res2}"
     print(f"     [PASS] Direct key overwrite contradiction flagged as DISPUTED: {poison_res2['dispute_reason'][:70]}...")
 
-    print("\n[+] 3-TIER MEMORY ENGINE SELF-TEST PASSED: 100% OPERATIONAL WITH TYPE-SAFE GUARDRAILS!\n")
+    print("\n[+] 3-TIER MEMORY ENGINE SELF-TEST PASSED: 100% OPERATIONAL WITH OFFLINE GUARDRAILS!\n")
     return 0
 
 

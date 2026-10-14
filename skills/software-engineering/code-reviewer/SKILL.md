@@ -1,22 +1,26 @@
 ---
 name: code-reviewer
-description: >-
-  Use this skill to perform rigorous, senior-level code reviews on diffs, pull requests,
-  and existing files. Enforces automated pre-merge gates (linting, static typing, test coverage)
-  along with architectural review, separation of concerns, edge case handling, readability,
-  and project consistency.
+description: Use this skill when performing rigorous, senior-level code reviews on
+  diffs, pull requests, and existing files. Enforces 5-axis review and pre-merge quality
+  gates.
 ---
 
 # Code Reviewer & Architecture Auditor
 
-Acts as a senior staff engineer peer-reviewer. Provides thorough, actionable feedback on code diffs, pull requests, and refactorings. Combines an automated quality gate (static analysis, types, tests) with deep architectural inspection to ensure code is clean, maintainable, resilient, and enterprise-grade.
+## Overview
 
-## When to Use This Skill
+Performs senior staff engineer-level code reviews across five dimensions: Correctness, Readability, Architecture, Security, and Performance. Enforces automated pre-merge gates, cyclomatic complexity limits, and type safety standards.
+
+## When to Use
+
 - Before opening a pull request or merging a feature branch.
 - When reviewing a PR or diff submitted by a contributor or subagent.
 - When checking a codebase for code smells, anti-patterns, or architectural debt.
 - Prior to declaring an implementation task complete.
 - Trigger phrases: `"review this code"`, `"peer review"`, `"critique this PR"`, `"code review gate"`, `"audit this diff"`, `"check for code smells"`.
+- **When NOT to use**: Authoring the original feature code from scratch (use `fullstack-engineer`).
+
+## Core Process & 5-Axis Code Review Matrix
 
 ## Core Review Tenets
 1. **Automated Sanity First**: Run linters, type checks, and unit tests before reviewing logic. Never review code that fails compilation or tests.
@@ -169,22 +173,26 @@ When performing automated review passes, emit both human-readable Markdown and s
 - Highlight positive aspects of the implementation (clean types, thorough tests, elegant abstractions).
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"The tests pass, so the code must be ready to merge."* | Passing tests don't catch architectural debt, security leaks, memory bloat, or unmaintainable complexity. |
+| *"I don't want to be annoying by pointing out messy naming or deep nesting."* | Senior code review is kind, clear, and unyielding on maintainability; clean naming prevents thousands of hours of future confusion. |
+| *"A 1,000-line diff is fine if it's all part of the same feature."* | Massive diffs receive superficial reviews and harbor the highest defect density; demand vertical or horizontal PR splitting. |
+| *"Refactoring and feature work should be combined to save time."* | Mixing refactoring with new feature logic obscures functional changes in git bisect and complicates rollbacks. |
 
-1. **The "LGTM" Rubber Stamp**: Approving pull requests after a superficial skim without executing static typechecks or scrutinizing boundary conditions. Reviewers share responsibility for every line merged into production.
-2. **Bike-Shedding Formatting Over System Architecture**: Spending 80% of review bandwidth arguing over semicolon style or variable name cosmetics while missing unindexed $O(N^2)$ database loops or absent transaction rollbacks. Delegate style to automated linters (`black`, `prettier`, `biome`) and focus human/agent attention on correctness and architecture.
-3. **Vague, Non-Actionable Critiques**: Leaving comments like *"This looks messy, refactor this"* without offering a concrete code replacement or explaining the concrete failure mode. Always provide a clear diff suggestion.
-4. **Attempting to Review Mega-Diffs**: Reviewing 2,000+ line PRs spanning unrelated subsystems in a single pass. Defect detection rates plummet after 400 lines; require authors to decompose massive changes into stacked, reviewable PRs.
+## Red Flags
 
----
+- New conditional branches bolted onto unrelated control flows instead of extracting dedicated handlers.
+- Gratuitous `any`, `unknown`, or unsafe type-casts bypassing compiler type checking.
+- PRs exceeding 300 changed lines without a compelling architectural justification.
+- Review approvals granted without reviewing the actual line diff and test coverage.
 
-## Quality Checklist
+## Verification
 
-- [ ] Static typing and linters run completely green before manual inspection begins.
-- [ ] Automated test coverage exists for all new or modified code branches.
-- [ ] Review distinguishes strictly between Critical Blockers, Improvements, and Nitpicks.
-- [ ] All requested changes include concrete code recommendations and clickable line links.
-- [ ] Database interactions are checked for N+1 queries, indexing, and transaction safety.
-- [ ] Resource cleanup (closing file handles, connections, streams) is verified.
+After completing the workflow, confirm:
+- [ ] All five axes (Correctness, Readability, Architecture, Security, Performance) are reviewed and scored.
+- [ ] Structural remedies (e.g. dispatchers, helpers, type boundaries) are proposed for all flagged smells.
+- [ ] Automated gates (linter, types, unit tests) pass with zero errors.
+- [ ] PR description clearly explains what changed, why, and how to verify.

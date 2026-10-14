@@ -102,7 +102,7 @@ def check_git(root):
                  if l.strip() and not l.strip().startswith("?? .gsd/")]
         if dirty:
             issue("git","warn",f"Dirty working tree ({len(dirty)} file(s)) — commit before resuming")
-    except Exception:
+    except (subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
         issue("git","warn","git unavailable")
 
 def check_environment(root):

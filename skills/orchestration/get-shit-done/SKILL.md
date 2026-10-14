@@ -1,25 +1,28 @@
-﻿---
+---
 name: get-shit-done
-description: >-
-  A structured methodology for shipping production software with AI agents
-  without hitting the vibe coding ceiling. Enforces 3-tier work breakdown
-  (Project to Milestone to Slice), prevents context drift across sessions,
-  blocks premature completion claims, and ensures every slice is vertically
-  delivered end-to-end. MANDATORY TRIGGERS: 'gsd this', 'plan this as gsd',
-  'break this down gsd style', 'structure this project', 'i want to use gsd'.
-  STRONG TRIGGERS: 'plan the next milestone', 'create a slice', 'what should
-  I build next', 'set up the project structure', 'how do I track progress'.
-  Do NOT trigger on bug fixes, simple one-off tasks, or tiny feature
-  additions that fit in a single context window.
+description: Use this skill when shipping software with AI agents without context
+  rot. Enforces 3-tier work breakdown (Project to Milestone to Slice) and vertical
+  slice delivery.
 ---
 
 # Get Shit Done (GSD)
 
-GSD is an AI-assisted software development methodology for solo builders and small teams who have hit the **vibe coding ceiling** — the point where feature-by-feature chat coding breaks down because the codebase is too large for any single context window.
+## Overview
 
-GSD's core insight: **context is a managed resource, not a conversation log.** Each session loads exactly the context the current task needs. Project memory lives on disk in structured files, not in conversation history that expires.
+GSD is an engineering methodology for shipping production software with AI agents without hitting the **vibe coding ceiling** — the point where feature-by-feature chat breaks down because the codebase exceeds any single context window.
 
----
+Context is treated as a managed, scarce resource rather than an append-only chat transcript. Project state, decisions, and knowledge persist deterministically on disk inside `.gsd/`, guaranteeing clean multi-day continuity across agent sessions.
+
+## When to Use
+
+- Break down complex multi-week features into structured, vertically delivered slices.
+- Structuring new software initiatives to prevent context drift and hallucinations.
+- Planning milestones and tracking progress across multi-agent handoffs.
+- Mandatory triggers: `'gsd this'`, `'plan this as gsd'`, `'break this down gsd style'`, `'structure this project'`, `'i want to use gsd'`.
+- Strong triggers: `'plan the next milestone'`, `'create a slice'`, `'what should I build next'`, `'set up the project structure'`, `'how do I track progress'`.
+- **When NOT to use**: Trivial single-line bug fixes, typo corrections, or small self-contained tasks that comfortably fit into a single conversational context window.
+
+## Core Process & 3-Tier GSD Methodology
 
 ## The Core Problem: Vibe Coding Ceiling
 
@@ -43,9 +46,11 @@ Project (the full product — defined once in PROJECT.md)
 ```
 
 **Rules that must never break:**
+- **Mandatory STOP-after-spec gate**: After creating `PROJECT.md` or milestone roadmap, STOP and wait for explicit user approval before implementing any slice
+- **The ~100-line diff budget**: Every task inside a slice must stay $\le 100\text{--}150$ lines; split oversized tasks vertically
 - A slice cuts through ALL layers (DB → API → frontend) for ONE user capability
 - A slice fits in ONE context window
-- A slice is done ONLY when its UAT test produces fresh evidence
+- A slice is done ONLY when its UAT test produces fresh execution evidence (per [references/done.md](../../../references/done.md))
 - A task that exceeds 60 min gets split
 - A slice that exceeds 1 day gets split
 
@@ -56,43 +61,14 @@ Project (the full product — defined once in PROJECT.md)
 ```
 project-root/
 +-- .gsd/
-    +-- PROJECT.md              <- Product vision, tech stack, milestone sequence
+    +-- PROJECT.md              <- Product vision & roadmap
     +-- REQUIREMENTS.md         <- Capability contract with R### IDs
     +-- DECISIONS.md            <- Architectural decisions log (append-only)
-    +-- STATE.md                <- Derived state — active milestone/phase
-    +-- KNOWLEDGE.md            <- Cross-session lessons and patterns (append-only)
-    +-- CAPTURES.md             <- Fire-and-forget thought captures for triage
-    +-- PREFERENCES.md          <- Project-level config (git, planning depth, etc.)
-    +-- auto.lock               <- Crash recovery: PID, active unit, session file
-    +-- metrics.json            <- Slice completion tracker
-    +-- milestones/
-    |   +-- M001/
-    |       +-- M001-CONTEXT.md    <- Milestone brief: scope, goals, decisions
-    |       +-- M001-RESEARCH.md   <- Codebase + library findings
-    |       +-- M001-ROADMAP.md    <- Ordered slices with risk + dependencies
-    |       +-- M001-VALIDATION.md <- QA check vs success criteria (written at end)
-    |       +-- M001-SUMMARY.md    <- Milestone completion record
-    |       +-- slices/
-    |           +-- S01/
-    |               +-- S01-PLAN.md        <- Task breakdown and must-haves
-    |               +-- S01-RESEARCH.md    <- Slice-scoped codebase findings
-    |               +-- S01-SUMMARY.md     <- Compressed slice record (after done)
-    |               +-- S01-UAT.md         <- Acceptance test script
-    |               +-- S01-ASSESSMENT.md  <- UAT execution results
-    |               +-- tasks/
-    |                   +-- T01-PLAN.md
-    |                   +-- T01-SUMMARY.md
-    |                   +-- T02-PLAN.md
-    |                   +-- T02-SUMMARY.md
-    +-- journal/
-    |   +-- YYYY-MM-DD.md       <- Daily session log
-    +-- activity/
-    |   +-- NNN-[unit]-[id].jsonl  <- Machine-readable execution logs
-    +-- runtime/
-        +-- units/*.json           <- Active unit metadata
+    +-- STATE.md                <- Active milestone / slice tracker
+    +-- milestones/M###/        <- Milestone context, research & roadmap
 ```
 
-See `scripts/gsd-init.py` to scaffold this structure automatically.
+For the complete `.gsd/` file tree specification, see [references/gsd-artifacts.md](../../../references/gsd-artifacts.md). Scaffolding is automated via `scripts/gsd-init.py`.
 
 ---
 
@@ -231,45 +207,11 @@ Before handing any brief to a GSD session:
 
 ---
 
-## The KNOWLEDGE.md System (Cross-Session Memory)
+## The KNOWLEDGE.md & CAPTURES System (Cross-Session Memory)
 
-`KNOWLEDGE.md` is an append-only register of project-specific rules, patterns,
-and lessons. The agent reads it at the start of every unit and appends when
-discovering non-obvious patterns or gotchas.
-
-**Example:**
-```markdown
-## [2024-01-15] [Source: session M001/S01/T02]
-- Prisma `contains` is case-sensitive. Use `mode: 'insensitive'` for search.
-- Context: Discovered when plain `contains: query` missed uppercase inputs.
-
-## [2024-01-16] [Source: user]
-- Always use the existing `withAuth` middleware — do not create new auth wrappers.
-```
-
-To add a rule manually: `/gsd knowledge [rule text]`
-
----
-
-## The CAPTURES System (Mid-Session Thought Capture)
-
-Don't interrupt auto-mode for ideas. Capture them:
-```
-/gsd capture "add rate limiting to the API endpoints"
-/gsd capture "the auth flow should also support OAuth"
-```
-
-Captures append to `.gsd/CAPTURES.md` and auto-triage between tasks.
-
-| Classification | Meaning | Resolution |
-|---|---|---|
-| `quick-task` | Small self-contained fix | Executed immediately inline |
-| `inject` | New task for current slice | Task injected into active slice plan |
-| `defer` | Important but not urgent | Deferred to roadmap reassessment |
-| `replan` | Changes current approach | Triggers slice replan |
-| `note` | Informational only | Acknowledged, no plan changes |
-
-Run `/gsd triage` at any time to process pending captures manually.
+- **`KNOWLEDGE.md`**: Append-only register of project rules, patterns, and lessons. Loaded at the start of every slice unit to eliminate onboarding context rot. Add rule: `/gsd knowledge [rule]`.
+- **`CAPTURES.md`**: Asynchronous thought queue. Capture ideas mid-execution without interrupting auto-mode: `/gsd capture [idea]`. Triaged between slices (`quick-task`, `inject`, `defer`, `replan`, `note`).
+- See [references/gsd-artifacts.md](../../../references/gsd-artifacts.md) for full capture triage workflows.
 
 ---
 
@@ -309,114 +251,34 @@ See `scripts/gsd-doctor.py` for a standalone lightweight health checker.
 
 ---
 
-## Anti-Patterns GSD Guards Against
+## Common Rationalizations
 
-| Anti-Pattern | Fix |
+| Rationalization | Reality |
 |---|---|
-| **Horizontal Builder** — building DB → API → UI as full layers | Define slices by user story, not technical layer |
-| **Premature Claimer** — "done" without terminal evidence | Every slice requires S##-ASSESSMENT.md with actual UAT results |
-| **Context Amnesiac** — new session without reading .gsd/ | Context recovery is mandatory — read PROJECT.md → STATE.md → KNOWLEDGE.md |
-| **Scope Creeper** — slice grows from 1 task to 10 | Slice > 1 day → stop, split, commit, continue |
-| **Perfectionist Stall** — waiting for perfect before shipping | Pass UAT criteria. Ship. Log gaps in KNOWLEDGE.md. |
-| **Vague Brief** — "make it faster" / "improve UX" | Brief Quality Checklist: observable behaviour + acceptance criteria |
+| *"We can just build the entire feature in one long continuous agent session."* | Long sessions suffer severe context degradation, hallucinate prior states, and drop critical safety gates; structured slices prevent context rot. |
+| *"I can start coding Slice 1 as soon as I draft the roadmap."* | Violates the STOP-after-spec gate. The user must review and approve the roadmap and slice contracts before any code is modified. |
+| *"A task diff of 350 lines is fine because it covers the whole slice."* | Oversized diffs hide edge-case bugs and fail pre-merge review; enforce the $\le 100\text{--}150$ line task budget. |
+| *"Horizontal layering (building all DB, then all API, then all UI) is cleaner."* | Horizontal building delays user validation until the end; vertical slices deliver working, testable end-to-end functionality at every step. |
+| *"Documentation files (`PROJECT.md`, `STATE.md`) create unnecessary overhead."* | Project state documentation serves as the persistent anchor across session boundaries, eliminating onboarding memory loss. |
+| *"I can mark the slice done because the code looks complete."* | Slices are done only when verified by live execution evidence; 'looks right' is strictly disallowed. |
+| *"Checking in mid-task breaks developer flow."* | Unchecked agent autonomy on complex tasks leads to massive architectural drift; 15-minute slice checkpoints ensure alignment. |
 
----
+## Red Flags
 
-## How to Use This Skill
+- Agent modifying code before receiving explicit approval of the milestone roadmap (breaking STOP-after-spec).
+- Task diffs exceeding 150 lines without vertical decomposition.
+- Agent declaring a slice complete without executing tests or verifying runtime functionality.
+- Slices taking more than 15-20 minutes of continuous tool calls without human checkpoints.
+- State files (`.gsd/STATE.md`) drifting out of sync with actual codebase implementation.
+- Attempting to start Slice N+1 while Slice N has failing tests or unmerged diffs.
+- Building horizontal stubs instead of vertically integrated functional user stories.
 
-### Starting a New Project
-When user says "gsd this" / "plan this as gsd" / "structure this project":
+## Verification
 
-1. **Run Discussion Protocol** (all 7 steps — depth verification gate is mandatory)
-2. **Scaffold `.gsd/`** with `python scripts/gsd-init.py --project "Name"`
-3. **Write artifacts** in order: PROJECT.md → REQUIREMENTS.md → DECISIONS.md → M001-CONTEXT.md → M001-ROADMAP.md → STATE.md
-4. **Begin auto-mode loop**
-
-### Starting a Session on Existing GSD Project
-Context recovery (mandatory, in this order):
-```
-.gsd/PROJECT.md
-.gsd/milestones/M###/M###-CONTEXT.md  (active milestone)
-.gsd/STATE.md
-.gsd/KNOWLEDGE.md
-.gsd/CAPTURES.md  (any pending?)
-.gsd/journal/YYYY-MM-DD.md  (yesterday)
-git log --oneline -5
-```
-Report: "We are at M### S## [name]. [N] slices done, [N] remaining. Next: [slice name]."
-Confirm next slice → execute loop.
-
-### Quick Task (Small Well-Understood Change)
-Use `/gsd quick [description]` for:
-- Clearly scoped changes (you know exactly what to touch)
-- No research or multi-task planning needed
-- Verifiable in 1–2 steps
-
-Still gets: atomic commit, state tracking, KNOWLEDGE.md update.
-
----
-
-## Commit Convention
-
-```
-feat(M001/S01/T01): build login API endpoint
-GSD-Task: M001/S01/T01
-
-feat(M001/S01/T02): add login form component
-GSD-Task: M001/S01/T02
-
-feat(M001/S01): complete user authentication flow
-feat(M001): milestone complete — core auth platform
-```
-
----
-
-## PREFERENCES.md — Project Config
-
-```yaml
----
-mode: solo          # solo | team
-git:
-  auto_push: false
-  isolation: none   # none | worktree | branch
-  merge_strategy: squash
-  commit_docs: true
-planning_depth: normal  # normal | deep
-phases:
-  skip_slice_research: false
-  reassess_after_slice: true
-parallel:
-  enabled: false
-  max_workers: 2
----
-```
-
-`mode: solo` — auto-push on, squash merge, simple IDs
-`mode: team` — unique IDs, push branches, pre-merge checks
-
----
-
-## Companion Scripts
-
-| Script | Purpose | Usage |
-|---|---|---|
-| `scripts/gsd-init.py` | Scaffold full `.gsd/` structure | `python gsd-init.py --project "My App"` |
-| `scripts/gsd-status.py` | Progress dashboard | `python gsd-status.py` |
-| `scripts/gsd-doctor.py` | Health check + auto-fix | `python gsd-doctor.py [--fix]` |
-| `scripts/gsd-journal.py` | Create/open daily session log | `python gsd-journal.py` |
-| `scripts/gsd-capture.py` | Fire-and-forget thought capture | `python gsd-capture.py "my idea"` |
-
-Templates in `resources/templates/`: PROJECT.md, MILESTONE-CONTEXT.md,
-MILESTONE-ROADMAP.md, SLICE-PLAN.md, REQUIREMENTS.md
-
----
-
-## The GSD Mindset
-
-> **Ship vertical slices. Context is sacred. Evidence before claims.
-> Never build a layer — always build a thread.**
-
-The moment you skip the Discussion Protocol, skip context recovery, accept
-"done" without evidence, or let a slice grow beyond 1 day — you are back to vibe coding.
-
-Follow it exactly at first. The payoff compounds at 15+ files and never stops.
+After completing a GSD milestone or slice, confirm:
+- [ ] Project directory contains valid `.gsd/` structure (`PROJECT.md`, `ROADMAP.md`, `STATE.md`, `KNOWLEDGE.md`).
+- [ ] Explicit STOP-after-spec gate was observed prior to starting implementation.
+- [ ] All committed tasks adhered to the $\le 100\text{--}150$ line diff budget.
+- [ ] Active slice satisfies its User Story and all Acceptance Test criteria with live terminal evidence (per [references/done.md](../../../references/done.md)).
+- [ ] GSD repository health audit passes: `python skills/orchestration/get-shit-done/scripts/gsd-doctor.py`.
+- [ ] Journal log and session state are committed with conventional commit messages.

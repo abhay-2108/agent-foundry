@@ -1,21 +1,26 @@
 ---
 name: bug-hunter
-description: >-
-  Use this skill to diagnose, isolate, reproduce, and resolve tricky software bugs,
-  runtime exceptions, regressions, race conditions, and logic errors. Employs a scientific
-  root-cause analysis methodology with minimal reproduction test cases.
+description: Use this skill when diagnosing, isolating, reproducing, and resolving
+  tricky software bugs, runtime panics, regressions, and logic errors using minimal
+  repro test cases.
 ---
 
 # Bug Hunter & Root Cause Debugger
 
-A structured, hypothesis-driven debugging skill designed to track down, isolate, and eradicate elusive bugs, regressions, and silent failures without guessing or introducing secondary breaks.
+## Overview
 
-## When to Use This Skill
+Diagnoses, isolates, reproduces, and resolves tricky software bugs, runtime exceptions, race conditions, and regressions using a scientific hypothesis-driven methodology and minimal failing reproduction tests.
+
+## When to Use
+
 - When receiving an error message, stack trace, or failing test.
 - When an application behaves incorrectly, produces wrong calculations, or hangs.
 - When investigating flaky, intermittent, or race condition issues.
 - When tasked with fixing an issue where the root cause is unknown.
 - Trigger phrases: `"debug this"`, `"find the bug"`, `"why is this failing?"`, `"fix this crash"`, `"investigate error"`.
+- **When NOT to use**: Reviewing greenfield PRs for general style and naming conventions (use `code-reviewer`).
+
+## Core Process & Scientific Debugging Protocol
 
 ## Core Debugging Principles
 1. **Never Guess or Patch blindly**: Do not change code hoping the bug disappears. Understand *why* it failed before changing anything.
@@ -165,22 +170,26 @@ async def test_concurrent_refresh_race_condition():
 }
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"I can fix this bug immediately by tweaking this line without writing a test."* | Fixing code without a reproduction test frequently papers over the symptom while leaving the root cause intact, inviting future regressions. |
+| *"The bug is intermittent, so it must be a transient hardware or network glitch."* | Intermittent bugs are almost always race conditions, unhandled promise rejections, or un-synchronized shared memory access. |
+| *"Adding print statements is enough; we don't need a debugger or traces."* | Unstructured print debugging pollutes code, doesn't capture concurrent threads, and is stripped before committing. |
+| *"The stack trace points to line 42, so the bug must be on line 42."* | Stack traces report where an exception was thrown, not where corrupted state originated; trace upstream state mutations. |
 
-1. **Symptom Band-Aiding (Defensive Whack-a-Mole)**: Wrapping crashing lines in blanket `try...catch { return null; }` or blind optional chaining (`user?.profile?.settings?.id`). This suppresses the crash but converts an explicit failure into a silent data corruption bug downstream. Fix the root cause, not the symptom.
-2. **"Shotgun Debugging" (Guess-and-Check)**: Making multiple random code edits across multiple files simultaneously hoping the error resolves. If you don't know *why* a change fixed the bug, you haven't fixed it. Formulate a hypothesis and test one variable at a time.
-3. **Skipping the Reproduction Test Case**: Modifying source code before producing a reliable, automated failing test case. Without a repro test, you cannot prove the bug was resolved or prevent future regressions.
-4. **Leaving Debug Scaffolding in Production**: Submitting PRs containing leftover `print("DEBUG HERE")` statements, commented-out dead code blocks, or temporary mock hardcoding.
+## Red Flags
 
----
+- Applying 'shotgun fixes' (changing multiple lines at once hoping the bug disappears).
+- Wrapping buggy code in generic `try...except: pass` blocks to suppress the error.
+- Declaring a bug fixed without running the minimal reproduction test in an isolated environment.
+- Failing to check for identical bug patterns across related modules in the codebase.
 
-## Quality Checklist
+## Verification
 
-- [ ] A minimal, deterministic reproduction test case was created and failed reliably before any fix.
-- [ ] Root cause is isolated to the exact line and state transition, not just masked with defensive null checks.
-- [ ] Surgical fix modifies the minimal necessary code surface without side-effect regressions.
-- [ ] The reproduction test passes after applying the patch.
-- [ ] The broader project test suite runs completely green.
-- [ ] All temporary debug logs, print statements, and scratch files are cleaned up.
+After completing the workflow, confirm:
+- [ ] A minimal failing reproduction test is written and confirmed failing before applying the fix.
+- [ ] The root cause is identified and explained with causal evidence, not just symptom suppression.
+- [ ] The fix is applied and verified: reproduction test passes and all existing test suites remain green.
+- [ ] Edge cases (null inputs, boundary conditions, concurrent access) are covered by regression tests.

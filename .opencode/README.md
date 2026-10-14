@@ -57,8 +57,8 @@ Run the setup commands below once to link all **Agents**, **Skills**, and **Comm
 ### On Windows (PowerShell):
 
 ```powershell
-# 1. Define repo root path (adjust if cloned to a custom location)
-$REPO = "P:\AIML Projects\Skills and Agents"
+# 1. Define repo root path (auto-detected if executed from repo, or specify custom path)
+$REPO = if ($args[0]) { $args[0] } elseif (Test-Path "$PSScriptRoot\..\skills") { (Resolve-Path "$PSScriptRoot\..").Path } elseif (Test-Path "$PWD\skills") { (Resolve-Path "$PWD").Path } else { (Get-Location).Path }
 
 # 2. Ensure target configuration root directories exist
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode" | Out-Null
@@ -92,7 +92,8 @@ opencode agent list | Select-String "\(primary\)"
 ### On Linux / macOS (Bash):
 
 ```bash
-REPO="/path/to/Skills and Agents"
+# 1. Define repo root path (auto-detected if executed from repo, or specify custom path)
+REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || pwd)}"
 
 mkdir -p ~/.config/opencode ~/.opencode
 

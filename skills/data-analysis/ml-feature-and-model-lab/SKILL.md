@@ -8,9 +8,12 @@ description: >-
 
 # Machine Learning Feature & Model Laboratory
 
-Acts as a Senior Machine Learning Engineer and Quantitative Data Scientist. Unifies the three pillars of empirical machine learning: **leakage-safe feature pipeline engineering**, **rigorous statistical hypothesis testing**, and **model explainability and algorithmic fairness auditing via SHAP**.
+## Overview
 
-## When to Use This Skill
+Unified laboratory for leakage-safe machine learning feature engineering, statistical hypothesis testing (A/B testing, Mann-Whitney U, ANOVA), model evaluation, and algorithmic fairness auditing with SHAP.
+
+## When to Use
+
 - When engineering tabular feature sets (cyclical time, target encoding, interaction terms, scaling).
 - When designing, analyzing, or interpreting A/B test experiments or statistical significance tests.
 - When explaining black-box model predictions using TreeSHAP, LinearSHAP, or KernelSHAP.
@@ -18,6 +21,9 @@ Acts as a Senior Machine Learning Engineer and Quantitative Data Scientist. Unif
 - Trigger phrases: `"feature engineering pipeline"`, `"A/B test significance"`, `"statistical hypothesis test"`, `"explain model with SHAP"`, `"feature importance"`, `"audit model fairness"`.
 
 ---
+- **When NOT to use**: Designing non-ML relational database indexes (use `backend-architecture`).
+
+## Core Process & Machine Learning Experimentation Lab
 
 ## The 3 Pillars of ML Rigor
 
@@ -97,21 +103,26 @@ Measure model predictions across protected demographic subgroups (e.g., age, gen
   $$\text{DIR} = \frac{P(\hat{Y}=1 \mid D=\text{unprivileged})}{P(\hat{Y}=1 \mid D=\text{privileged})} \ge 0.80$$
 - **Equalized Odds**: True Positive Rate (TPR) and False Positive Rate (FPR) parity across subgroups within a 5% margin.
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Accuracy is the only metric needed to evaluate our classifier."* | On imbalanced datasets, a model predicting the majority class can achieve 99% accuracy while having 0% recall on the minority class. |
+| *"A/B test results are statistically significant after 2 days of testing."* | Stopping experiments early without reaching power-analyzed sample sizes inflates false positive rates via p-hacking. |
+| *"Black-box models don't need explainability if benchmark test scores are high."* | Unexplained models deploy hidden demographic biases, confounders, and shortcut learning that cause catastrophic real-world failures. |
+| *"Cross-validation can be simple random K-fold on time-series data."* | Random K-fold on time-series data leaks future information into past predictions; use TimeSeriesSplit or rolling-window evaluation. |
 
-1. **Global Imputation/Scaling Before Train-Test Split**: Imputing means or fitting `MinMaxScaler` across the entire dataset before splitting. This causes information from the validation set to leak into training, artificially inflating accuracy.
-2. **Peeking and Early Stopping in A/B Tests**: Continuously checking p-values every day and stopping the test the moment $p < 0.05$. This multiplies false positive rates by 300–500%.
-3. **Using KernelSHAP on Unsummarized Data**: Calling `shap.KernelExplainer` on 50,000 raw samples. KernelSHAP is $O(M \cdot 2^{|F|})$—it will freeze the process. Always summarize the background set with `shap.kmeans(X_train, 50)`.
+## Red Flags
 
----
+- Evaluating model performance without stratified sampling on class-imbalanced datasets.
+- Failing to log model hyperparameters, random seeds, and evaluation metrics in reproducible experiment trackers.
+- Deploying models without checking demographic parity or disparate impact across sensitive subgroups.
+- Comparing model versions without paired statistical significance testing (e.g. McNemar's test).
 
-## Quality Checklist
+## Verification
 
-- [ ] All scalers, encoders, and transformers are fit solely on training data.
-- [ ] Temporal features use continuous cyclical sin/cos encodings.
-- [ ] Statistical tests verify normality assumptions before choosing parametric vs. non-parametric tests.
-- [ ] Multi-hypothesis testing applies Benjamini-Hochberg FDR adjustments.
-- [ ] SHAP background datasets are clustered or bounded ($\le 100$ background centroids).
-- [ ] Demographic subgroups are audited for the 80% disparate impact threshold.
+After completing the workflow, confirm:
+- [ ] Model evaluation logs Precision, Recall, F1, ROC-AUC, and PR-AUC curves.
+- [ ] Statistical hypothesis tests verify that performance gains over baseline are statistically significant (p < 0.05).
+- [ ] SHAP summary plots identify top predictive features and explain individual prediction edge cases.
+- [ ] Fairness audit verifies disparate impact ratios remain within compliant thresholds (0.80 - 1.25).

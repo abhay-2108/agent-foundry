@@ -1,0 +1,7 @@
+{
+  "name": "agent-foundry",
+  "version": "2.0.0",
+  "description": "41 engineering skills and 10 specialist personas for Claude Code.",
+  "skills": "../skills",
+  "commands": "../.claude/commands"
+}

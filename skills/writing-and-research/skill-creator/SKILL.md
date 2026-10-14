@@ -8,13 +8,19 @@ description: >-
 
 # Skill Creator & Agent Capability Architect
 
-The authoritative meta-skill for authoring, testing, and packaging production-grade Agent Skills compatible with Antigravity, Claude Code, Codex, and OpenCode.
+## Overview
 
-## When to Use This Skill
+Authors, evaluates, refines, and packages reusable AI agent skills conforming to the Agent Skills standard. Enforces progressive disclosure, anti-rationalization tables, triggering descriptions, and concrete verification gates.
+
+## When to Use
+
 - When tasked with creating a new skill for the agent skill library.
 - When refactoring or updating an existing `SKILL.md` file.
 - When defining new procedural workflows, tool runbooks, or domain cheatsheets.
 - Trigger phrases: `"create a skill"`, `"write a new skill"`, `"skill creator"`, `"package this workflow as a skill"`.
+- **When NOT to use**: Writing application business logic or backend APIs (use `backend-architecture`).
+
+## Core Process & Skill Authoring Methodology
 
 ## The Anatomy of an Agent Skill
 
@@ -85,41 +91,26 @@ Short overview of the skill's purpose.
 2. Step 2: Action / Script execution
 3. Step 3: Verification
 
-## Verification & Quality Gates
-- How the agent verifies that the task was completed successfully.
+## Common Rationalizations
 
-## Error Handling & Recovery
-- Explicit instructions on what to do if a step fails.
+| Rationalization | Reality |
+|---|---|
+| *"A skill is just a markdown prompt; it doesn't need a strict structure."* | Unstructured prompt dumps lead to agent hallucinations and missed steps; structured workflows with exit gates guarantee deterministic execution. |
+| *"The skill description can just say 'Helps with coding'."* | Vague descriptions cause the agent's router to misfire or fail to trigger when needed; explicit 'Use when' criteria are mandatory. |
+| *"Anti-rationalization tables are unnecessary extra tokens."* | Anti-rationalization tables are the single most effective barrier against agent corner-cutting and vibe-coding. |
+| *"We can put all helper scripts inline in SKILL.md."* | Inlining 500-line scripts blows up token context; progressive disclosure with external `scripts/` keeps skills token-efficient. |
 
-## Output Templates / Examples
-- Concrete templates for reports, diffs, or code.
-```
+## Red Flags
 
-### Step 3: Test & Validate the Skill
-1. **Frontmatter Test**: Ensure the YAML header parses without syntax errors.
-2. **Trigger Evaluation**: Test with a sample user query matching the description to ensure the agent activates the skill.
-3. **Execution Run**: Have the agent follow the skill instructions end-to-end on a realistic test case.
-4. **Refactor Loopholes**: If the agent hallucinates or takes shortcuts, add explicit negative constraints ("Do NOT do X").
+- Frontmatter missing required `name` or `description` with explicit triggering keywords.
+- Skills lacking verification checklists or allowing 'seems right' as exit criteria.
+- Process steps written as vague suggestions ('consider writing tests') instead of actionable imperatives.
+- Skills exceeding 500 lines without breaking deep checklists into `references/`.
 
-### Step 4: Verification & Packaging
-Ensure the skill folder follows the standard structure: `skills/<skill-name>/SKILL.md` with optional `scripts/` or `examples/` subfolders for heavy helper assets.
+## Verification
 
----
-
-## Anti-Patterns & Traps to Avoid
-
-1. **Monolithic Code Inlining in `SKILL.md`**: Embedding 300+ lines of raw Python or TypeScript directly into the instruction markdown. This wastes thousands of context tokens on every invocation. Use Progressive Disclosure: place large executable scripts in `scripts/` and keep `SKILL.md` high-signal.
-2. **First-Person or Chatty Frontmatter**: Writing descriptions like *"I can help you build websites..."*. Agents route skills using semantic similarity over tool descriptions; always use imperative, third-person phrasing: *"Use this skill when designing, building, or styling responsive web frontends..."*
-3. **Overly Broad / Greedy Trigger Descriptions**: Writing descriptions like *"Use this skill for any programming task"*. This triggers false-positive skill activations on unrelated prompts. Include explicit trigger phrases and boundary scenarios.
-4. **Folder and Frontmatter Name Mismatch**: Assigning `name: my-cool-tool` in YAML while naming the folder `skills/helper-tool/`. In standard skill loaders (Antigravity/Claude Code), the frontmatter `name` must strictly match the directory name.
-
----
-
-## Quality Checklist
-
-- [ ] Frontmatter `name` strictly matches the parent directory kebab-case name.
-- [ ] Description is written in third-person imperative voice with concrete trigger scenarios.
-- [ ] Large runnable code blocks (>60 lines) are extracted into `scripts/` following progressive disclosure.
-- [ ] Core instructions include explicit anti-patterns and common developer traps.
-- [ ] A standardized pre-flight quality checklist is provided for agent verification.
-- [ ] All code snippets within the skill are syntactically valid and tested.
+After completing the workflow, confirm:
+- [ ] Frontmatter adheres strictly to the Agent Skills specification (`name`, `description`).
+- [ ] Includes Overview, When to Use (with negative exclusions), Core Process, Common Rationalizations, Red Flags, and Verification.
+- [ ] Companion helper scripts in `scripts/` execute without errors and pass `--test` flags.
+- [ ] Skill triggers correctly under automated routing benchmark evaluation.

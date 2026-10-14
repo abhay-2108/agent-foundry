@@ -11,9 +11,12 @@ description: >-
 
 # Model Explainability & Interpretability with SHAP
 
-Acts as a Senior ML Interpretability Engineer. Explains black-box model predictions using cooperative game theory — SHAP (SHapley Additive exPlanations) values assign each feature a mathematically fair credit for each prediction. Covers global explanations (what the model uses overall), local explanations (why this specific decision), and fairness audits (whether sensitive attributes drive predictions disproportionately).
+## Overview
 
-## When to Use This Skill
+Interprets and audits machine learning predictions using SHAP (SHapley Additive exPlanations). Implements TreeSHAP for gradient boosted trees, LinearSHAP for regression, KernelSHAP for black-box models, and generates waterfall, beeswarm, and fairness audit plots.
+
+## When to Use
+
 - When stakeholders ask: *"Why did the model reject this loan application?"* or *"What drove this prediction?"*
 - When evaluating model fairness, algorithmic bias, or disparate impact across demographic segments.
 - When selecting the most predictive features or diagnosing model bugs by inspecting SHAP patterns.
@@ -23,6 +26,9 @@ Acts as a Senior ML Interpretability Engineer. Explains black-box model predicti
 - Trigger phrases: `"explain model"`, `"SHAP values"`, `"feature importance"`, `"model interpretability"`, `"audit model bias"`, `"why did the model predict"`, `"model card"`, `"fairness audit"`.
 
 ---
+- **When NOT to use**: Basic SQL metric calculations without machine learning models (use `advanced-data-analyst`).
+
+## Core Process & SHAP Interpretability Protocol
 
 ## Global vs. Local Explainability
 
@@ -267,26 +273,26 @@ def approx_shap_importance(feature_matrix: list, predictions: list) -> dict:
 **Disparity Ratio**: 1.08 — ✅ No significant demographic bias detected
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Feature importance from Random Forest (`feature_importances_`) is sufficient."* | Gini importance is heavily biased toward high-cardinality features and doesn't reveal directionality; SHAP provides mathematically consistent, directional explanations. |
+| *"KernelSHAP on 100,000 rows is fine for an explainability report."* | KernelSHAP has exponential complexity; use TreeSHAP for tree models or background k-means summarization to prevent compute timeouts. |
+| *"Global feature importance is all stakeholders care about."* | Global importance hides individual decision biases; waterfall plots for individual high-stakes predictions are required for auditability. |
+| *"If an explanation makes sense to human intuition, the model must be fair."* | Human intuition overlooks subtle feature proxies that reproduce demographic bias; quantitative subgroup fairness audits are required. |
 
-1. **Using KernelSHAP on Tree Models** — KernelSHAP is 100–1000× slower than TreeSHAP for tree ensembles and produces approximations. **Fix**: Always use `shap.TreeExplainer` for XGBoost, LightGBM, RandomForest.
-2. **Summarizing Background with Full Training Set** — Passing all 1M training rows to `KernelExplainer` causes memory overflow. **Fix**: Use `shap.kmeans(X_train, k=50)` to create a representative 50-row background.
-3. **Interpreting Feature Importance Without Direction** — A feature with high mean |SHAP| could push predictions up OR down depending on its value. A bar chart alone is misleading. **Fix**: Always show the beeswarm plot to visualize directionality.
-4. **Fairness Audit via Prediction Parity Alone** — Equal positive prediction rates (Demographic Parity) can mask Equalized Odds violations. **Fix**: Check both Demographic Parity AND True Positive Rate parity across sensitive subgroups.
-5. **Skipping Additivity Verification** — If SHAP values don't sum to `prediction - base_value`, the explainer is mismatched with the model. **Fix**: Always run `check_additivity=True` and investigate mismatches before presenting results.
+## Red Flags
 
----
+- Passing un-scaled data into LinearSHAP or un-normalized backgrounds into KernelSHAP.
+- Beeswarm plots showing massive dependence on unvetted proxy features (e.g. zip code predicting race).
+- Presenting SHAP values without checking the additive efficiency property (sum of SHAP values must equal model output minus expected value).
+- Failing to document background dataset sampling methodology.
 
-## Quality Checklist
+## Verification
 
-- [ ] Explainer type selected based on model family (TreeSHAP for tree models, not KernelSHAP)
-- [ ] Background dataset for KernelSHAP summarized with `shap.kmeans()` (≤ 100 rows)
-- [ ] Additivity check passes: SHAP values sum to `prediction - base_value`
-- [ ] Global explanation: beeswarm plot generated showing direction AND magnitude
-- [ ] Local explanation: waterfall plot generated for at least 3 representative instances
-- [ ] Fairness audit: both Demographic Parity and TPR parity computed for all sensitive attributes
-- [ ] Potential leakage check: no ID or timestamp features in top-5 SHAP contributors
-- [ ] Model Card generated with explanation report and fairness summary
-- [ ] Companion script `shap_explainer.py --test` passes with zero errors
+After completing the workflow, confirm:
+- [ ] TreeSHAP / LinearSHAP calculates exact Shapley values adhering to local accuracy and consistency.
+- [ ] Beeswarm summary plot displays feature impact distribution and positive/negative directionality.
+- [ ] Waterfall plot breaks down individual predictions from base value to final output.
+- [ ] Model Card includes demographic parity and equalized odds fairness evaluations.

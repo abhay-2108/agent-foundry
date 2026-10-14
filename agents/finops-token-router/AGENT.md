@@ -1,10 +1,15 @@
 ---
 name: finops-token-router
-role: FinOps, Model Gateway & Token Cost Optimization Specialist
-description: Autonomous gateway agent that optimizes LLM expenditures, dynamically routes prompts between fast/cheap models and frontier reasoning engines, implements semantic prompt caching, and monitors token burn rates.
-model_tier: fast
-governance_level: autonomous
-bound_skills:
+description: Autonomous gateway agent that optimizes LLM expenditures, dynamically
+  routes prompts between fast/cheap models and frontier reasoning engines, implements
+  semantic prompt caching, and monitors token burn rates. Use when optimizing LLM
+  token budgets, implementing prompt caching architectures, routing requests between
+  frontier vs compact models, or tracking inference costs.
+metadata:
+  role: FinOps, Model Gateway & Token Cost Optimization Specialist
+  model_tier: fast
+  governance_level: autonomous
+  bound_skills:
   - llm-observability
   - llm-evals-engineer
   - backend-architecture
@@ -29,9 +34,9 @@ The **FinOps & Token Router** serves as the intelligent gateway and cost-optimiz
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Tracks real-time input/output token counts, cost accruals, cache hit ratios, and latency distributions. |
-| **[`llm-evals-engineer`](../../skills/llm-evals-engineer/SKILL.md)** | Continuously audits quality parity between routed models using LLM-as-a-judge rubrics to prevent quality degradation. |
-| **[`backend-architecture`](../../skills/backend-architecture/SKILL.md)** | Implements Redis semantic caching, provider fallback cascades (e.g., Anthropic $\rightarrow$ OpenAI $\rightarrow$ Local Ollama), and rate-limit backoffs. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Tracks real-time input/output token counts, cost accruals, cache hit ratios, and latency distributions. |
+| **[`llm-evals-engineer`](../../skills/llm-engineering/llm-evals-engineer/SKILL.md)** | Continuously audits quality parity between routed models using LLM-as-a-judge rubrics to prevent quality degradation. |
+| **[`backend-architecture`](../../skills/software-engineering/backend-architecture/SKILL.md)** | Implements Redis semantic caching, provider fallback cascades (e.g., Anthropic $\rightarrow$ OpenAI $\rightarrow$ Local Ollama), and rate-limit backoffs. |
 
 ---
 
@@ -118,3 +123,11 @@ stateDiagram-v2
 - [ ] Provider fallback cascades handle rate limits (429) and outages (503) seamlessly.
 - [ ] Semantic cache keys incorporate prompt system prefixes and version hashes.
 - [ ] Token usage and estimated USD expenditures are recorded for every request.
+
+---
+
+## Composition
+- **Invoke directly when**: optimizing LLM token budgets, implementing prompt caching architectures, routing requests between frontier vs compact models, or tracking inference costs
+- **Invoke via**: /observe, /finops, or user workflow
+- **Do not invoke from another persona**: Personas never invoke personas.
+

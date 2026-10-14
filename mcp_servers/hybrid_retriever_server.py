@@ -32,34 +32,46 @@ class IndexedDocument:
 
 class HybridSearchEngine:
     def __init__(self):
+        from collections import Counter
         self.docs: Dict[str, IndexedDocument] = {}
         self.doc_lengths: Dict[str, int] = {}
+        self.term_freqs: Dict[str, "Counter[str]"] = {}
+        self.total_tokens: int = 0
         self.avg_doc_length: float = 0.0
         self.df: Dict[str, int] = {}  # Document frequencies
 
     def add_document(self, doc_id: str, title: str, content: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        from collections import Counter
         tokens = tokenize(content + " " + title)
         doc = IndexedDocument(doc_id=doc_id, title=title, content=content, tokens=tokens, metadata=metadata or {})
+        # Adjust totals if overwriting existing doc
+        if doc_id in self.docs:
+            old_len = self.doc_lengths.get(doc_id, 0)
+            self.total_tokens -= old_len
+            for t in set(self.docs[doc_id].tokens):
+                self.df[t] = max(0, self.df.get(t, 1) - 1)
         self.docs[doc_id] = doc
         self.doc_lengths[doc_id] = len(tokens)
+        self.term_freqs[doc_id] = Counter(tokens)
+        self.total_tokens += len(tokens)
 
         # Update document frequencies
         unique_tokens = set(tokens)
         for t in unique_tokens:
             self.df[t] = self.df.get(t, 0) + 1
 
-        total_tokens = sum(self.doc_lengths.values())
-        self.avg_doc_length = total_tokens / max(1, len(self.docs))
+        self.avg_doc_length = self.total_tokens / max(1, len(self.docs))
 
     def _bm25_score(self, query_tokens: List[str], doc: IndexedDocument, k1: float = 1.5, b: float = 0.75) -> float:
         score = 0.0
         n_docs = len(self.docs)
         doc_len = self.doc_lengths.get(doc.doc_id, 1)
+        tf_map = self.term_freqs.get(doc.doc_id, {})
 
         for q in query_tokens:
-            if q not in doc.tokens:
+            tf = tf_map.get(q, 0) if tf_map else 0
+            if tf == 0:
                 continue
-            tf = doc.tokens.count(q)
             df = self.df.get(q, 1)
             idf = math.log(1 + (n_docs - df + 0.5) / (df + 0.5))
             num = tf * (k1 + 1)

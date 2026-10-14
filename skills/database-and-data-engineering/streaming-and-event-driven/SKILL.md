@@ -9,11 +9,11 @@ description: >-
 
 # Streaming & Event-Driven Systems Architecture
 
-Acts as a Principal Distributed Systems & Event Streaming Architect. Designs resilient event-driven architectures across Apache Kafka, Redpanda, and Redis Streams. Solves complex distributed systems challenges including the dual-write problem, partition hotspotting, out-of-order event arrivals, consumer rebalancing, poison-pill triage, and end-to-end exactly-once processing semantics.
+## Overview
 
----
+Architects distributed event-driven systems and streaming data pipelines using Kafka, Redpanda, and Redis Streams. Enforces Transactional Outbox patterns, consumer idempotency, Dead Letter Queues (DLQ), and partitioned key ordering.
 
-## When to Use This Skill
+## When to Use
 
 - When designing Kafka/Redpanda topic schemas, partition strategies, and retention policies.
 - When implementing the Transactional Outbox pattern to prevent data loss or dual-write inconsistency.
@@ -24,6 +24,9 @@ Acts as a Principal Distributed Systems & Event Streaming Architect. Designs res
 - Trigger phrases: `"design kafka topic"`, `"event-driven architecture"`, `"redis streams consumer"`, `"dead letter queue pattern"`, `"transactional outbox"`, `"stream processing"`, `"idempotent consumer"`, `"event schema registry"`.
 
 ---
+- **When NOT to use**: Batch ETL processing or scheduled nightly data warehouse syncs (use `data-pipeline-etl`).
+
+## Core Process & Event Architecture Workflow
 
 ## The Event-Driven Architecture Lifecycle
 
@@ -161,25 +164,26 @@ For lightweight systems not requiring full Kafka infrastructure:
 - **`XACK mystream mygroup <id>`**: Acknowledges processed message.
 - **`XAUTOCLAIM mystream mygroup worker1 60000 0-0 COUNT 10`**: Automatically claims messages pending $>60\text{s}$ from crashed workers.
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Hard Guardrails
+| Rationalization | Reality |
+|---|---|
+| *"Dual-writing to the database and Kafka in the same API call is good enough."* | Dual writes without a two-phase commit or Transactional Outbox guarantee eventual inconsistency when the network fails between writes. |
+| *"Kafka guarantees exactly-once processing so consumers don't need idempotency."* | Brokers can retry unacknowledged messages; consumer crashes cause redelivery. Consumers must be strictly idempotent. |
+| *"We can just drop failed messages into error logs instead of a DLQ."* | Logging failed messages without a dedicated retry topic or Dead Letter Queue causes silent data loss and impossible reprocessing. |
+| *"Using random partition keys is fine if we have enough consumers."* | Random partition keys destroy message ordering; entity state mutations must share partition keys (`tenant_id`, `order_id`). |
 
-- 🚫 **Never use auto-commit (`enable.auto.commit=true`) in production consumers**: Auto-commit advances offsets before business logic completes, causing permanent data loss if the worker crashes mid-task.
-- 🚫 **Never retry failed messages in an in-memory loop on the consumer thread**: This triggers a consumer heartbeat timeout, causing a rebalance storm across the cluster.
-- 🚫 **Never mutate the database and send a message without the Outbox pattern**: Guarantees data drift and silent inconsistencies.
-- 🚫 **Never use random or time-only partition keys**: Destroys per-entity ordering guarantees.
+## Red Flags
 
----
+- Publishing messages directly inside database transactions without the Transactional Outbox pattern.
+- Consumer handlers that lack unique event deduplication checks in Redis or relational databases.
+- Consumer groups lacking configured Dead Letter Queues (DLQs) for poison-pill payloads.
+- Hardcoded partition counts or missing consumer backpressure handling during traffic spikes.
 
-## Verification & CLI Tooling
+## Verification
 
-Use the companion script [`streaming_event_toolkit.py`](./scripts/streaming_event_toolkit.py) to simulate partition routing, test transactional outbox draining, and benchmark idempotent DLQ consumers:
-
-```bash
-# Run self-test suite
-python skills/database-and-data-engineering/streaming-and-event-driven/scripts/streaming_event_toolkit.py --test
-
-# Route event to partition
-python skills/database-and-data-engineering/streaming-and-event-driven/scripts/streaming_event_toolkit.py hash-key --key "cust_98765" --partitions 16
-```
+After completing the workflow, confirm:
+- [ ] Transactional Outbox pattern guarantees atomic local database mutations and event emissions.
+- [ ] Consumer processing logic is verified idempotent across simulated duplicate message deliveries.
+- [ ] Dead Letter Queue (DLQ) retry routing handles malformed payloads without crashing consumer threads.
+- [ ] Event schemas are validated against Avro, Protobuf, or JSON schemas with backwards-compatibility checks.

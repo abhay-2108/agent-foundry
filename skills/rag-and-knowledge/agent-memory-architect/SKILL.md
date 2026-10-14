@@ -8,9 +8,12 @@ description: >-
 
 # Agent Memory Architect & Context Engine
 
-Guides the design and maintenance of long-term, multi-tiered agent memory systems. Allows agents to retain user preferences, domain knowledge, and past project history across sessions without overwhelming the LLM's context window.
+## Overview
 
-## When to Use This Skill
+Architects and manages tiered agent memory systems: Tier 1 (Working Memory / scratchpads), Tier 2 (Episodic Memory / SQLite execution logs), and Tier 3 (Semantic Memory / vector facts). Prevents memory poisoning, memory bloat, and context thrashing.
+
+## When to Use
+
 - When building AI agents that require state and memory across multiple days or conversations.
 - When selecting or configuring memory frameworks (`Mem0`, `Cognee`, `Zep`, vector databases).
 - When designing semantic search, fact extraction, and memory decay/summarization algorithms.
@@ -18,6 +21,9 @@ Guides the design and maintenance of long-term, multi-tiered agent memory system
 - Trigger phrases: `"agent memory"`, `"persistent memory"`, `"Mem0 integration"`, `"remember user preferences"`, `"episodic memory"`.
 
 ---
+- **When NOT to use**: Relational database schema optimization (use `backend-architecture`) or general RAG document retrieval (use `agentic-rag-engineer`).
+
+## Core Process & 3-Tier Memory Implementation
 
 ## The 3-Tiered Memory Architecture
 
@@ -108,20 +114,26 @@ system_prompt = f"Relevant User Context:\n{memory_context}\n\nTask: ..."
 - **Detect Conflicting State**: If a new memory says "User switched database from Postgres to SQLite", flag and archive the older contradictory memory.
 - **Memory Decay**: Gradually de-prioritize or archive facts that have not been retrieved or reinforced over $N$ interactions.
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Memory Store Poisoning**: Ingesting unvetted user inputs or scraped web content directly into long-term semantic memory. An adversary can inject persistent jailbreak instructions that automatically load into future sessions. Always sanitize facts before ingestion.
-2. **Ghost Fact Collisions**: Storing new facts without invalidating contradictory legacy facts (e.g., "User uses PostgreSQL" vs "User migrated to SQLite"). Always implement conflict detection to archive superseded entries.
-3. **Context Window Flooding**: Ingesting dozens of memory snippets on every prompt. Cap retrieval to top 3–5 high-confidence facts to avoid diluting system prompt attention.
-4. **Storing Raw Chat Transcripts Instead of Atomic Propositions**: Dumping conversational filler ("Hello", "Sounds good") into vector storage rather than distilling declarative atomic statements.
+| Rationalization | Reality |
+|---|---|
+| *"We can just stuff the entire conversation history into the context window."* | Unbounded history causes catastrophic context window bloat, degrades model attention, and explodes inference costs. |
+| *"Agents should freely write facts into semantic memory automatically."* | Unfiltered semantic memory writes lead to prompt injection poisoning, where malicious input permanently corrupts agent behavior. |
+| *"Episodic memory can be an in-memory Python list."* | In-memory stores vanish on process restart; durable SQLite storage with WAL mode is required for persistent cross-session memory. |
+| *"Deduplication is unnecessary because vector search handles duplicates."* | Duplicate facts dilute semantic search relevance scores and waste context tokens during recall. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Recording unverified user assertions or prompt injections directly into Tier 3 semantic memory without verification.
+- Semantic search queries retrieving stale or contradicted facts without conflict-resolution flags.
+- Context window overflowing due to uncompacted working scratchpads.
+- Database locks caused by missing SQLite WAL mode during concurrent agent access.
 
-- [ ] Ingested memories are distilled declarative statements, not raw conversation transcripts.
-- [ ] Memory retrieval is strictly bounded to top 3–5 items per turn to preserve context tokens.
-- [ ] Contradictory memories are flagged and legacy facts archived by recency timestamp.
-- [ ] Memory poisoning defenses are active: external untrusted content is never written to long-term memory without sanitization.
-- [ ] Memory decay or TTL policies are defined for ephemeral episodic task logs.
-- [ ] PII, passwords, and sensitive API keys are stripped prior to vector store persistence.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Tier 1 working memory compacts active milestones when context exceeds thresholds.
+- [ ] Tier 2 episodic memory logs all tool executions, arguments, and return codes into persistent SQLite storage.
+- [ ] Tier 3 semantic memory enforces anti-poisoning verification before recording permanent facts.
+- [ ] Memory engine test suite passes: `python memory/memory_engine.py --test`.

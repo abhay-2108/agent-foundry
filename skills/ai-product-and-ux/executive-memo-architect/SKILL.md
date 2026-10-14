@@ -9,11 +9,11 @@ description: >-
 
 # Executive Memo Architect & Strategic Business Communication
 
-Acts as a Chief of Staff & Senior VP of Strategy. Transforms ambiguous ideas, technical architectures, and strategic proposals into clear, decision-ready narrative memos. Strictly adheres to the **Amazon 6-Page Narrative Methodology**, enforces uncompromising quantitative rigor, eliminates passive hand-waving, and prepares leadership teams to make multi-million dollar capital and engineering decisions in a single sitting.
+## Overview
 
----
+Transforms complex technical proposals, architectures, and product initiatives into crisp, decision-ready narrative memos following the Amazon 6-page methodology. Enforces metric density, active voice, elimination of corporate weasel words, and rigorous ROI justification.
 
-## When to Use This Skill
+## When to Use
 
 - When drafting Amazon-style 6-Page Narrative Memos or 2-Page Executive Summaries.
 - When authoring formal Business Cases, Capex/Opex justifications, and ROI analyses.
@@ -23,6 +23,9 @@ Acts as a Chief of Staff & Senior VP of Strategy. Transforms ambiguous ideas, te
 - Trigger phrases: `"write 6-page memo"`, `"executive pitch deck"`, `"author business case"`, `"investor update memo"`, `"board briefing"`, `"amazon memo format"`, `"business case justification"`, `"strategy memo"`.
 
 ---
+- **When NOT to use**: Casual team chat updates, developer task tickets, or informal slide summaries where quantitative financial framing is unnecessary.
+
+## Core Process & Narrative Architecture
 
 ## The 6-Page Narrative Architecture (Amazon Methodology)
 
@@ -183,25 +186,26 @@ Used for monthly or quarterly updates to venture capitalists, board members, and
 3. **Highlights & Lowlights**: Honest transparency; lowlights must include root-cause analysis and corrective actions.
 4. **The Asks**: Specific introductions, regulatory connections, or hiring assistance requested.
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Hard Guardrails
+| Rationalization | Reality |
+|---|---|
+| *"Bullet points are easier for busy executives to scan."* | Bullet points hide logical gaps and shallow thinking; full narrative sentences force rigorous justification and reveal unexamined risks. |
+| *"Financial estimates can be added later once leadership approves the concept."* | Leadership cannot approve a concept without knowing capex, opex, headcount, and payback periods; proposals without financials are incomplete. |
+| *"Burying missed targets in the appendix prevents unnecessary panic."* | Executives despise surprises and respect transparency. Address lowlights upfront with immediate root-cause remediation plans. |
+| *"The FAQ section is just for marketing and soft questions."* | Executive FAQs must address the hardest questions: 'Why not buy a competitor?', 'What happens if adoption is only 10% of forecast?'. |
 
-- 🚫 **Never use bullet-point slides where narrative paragraphs are needed**: Bullet points allow writers to skate over logical gaps; full sentences expose flaws.
-- 🚫 **Never bury bad news**: Executives respect honesty and despise surprises. Place lowlights and missed targets right after the KPI scorecard, paired with immediate remediation plans.
-- 🚫 **Never omit the Financial Justification**: An engineering proposal without cost estimates (headcount, cloud spend, payback period) is incomplete.
-- 🚫 **Never write soft FAQs**: FAQs must not be softball marketing questions. Address the hardest questions: *"Why not buy vendor X?", "What happens if adoption is only 10% of forecast?"*
+## Red Flags
 
----
+- Use of corporate weasel words without data ('significantly faster', 'nearly seamless', 'best-of-breed').
+- Passive voice obscuring accountability ('mistakes were made' vs 'the platform team misconfigured the replica pool').
+- Proposals lacking a Tenet section (principles with teeth that resolve real architectural trade-offs).
+- Missing operational risks or lack of downside contingency scenarios.
 
-## Verification & CLI Tooling
+## Verification
 
-Use the companion script [`memo_audit_toolkit.py`](./scripts/memo_audit_toolkit.py) to audit draft memos for metric density, detect weasel words, and verify structural compliance:
-
-```bash
-# Run self-test suite
-python skills/ai-product-and-ux/executive-memo-architect/scripts/memo_audit_toolkit.py --test
-
-# Audit an executive memo markdown file
-python skills/ai-product-and-ux/executive-memo-architect/scripts/memo_audit_toolkit.py audit --file memo.md
-```
+After completing the workflow, confirm:
+- [ ] Memo achieves a high metric density (at least 2 quantified data points per major paragraph).
+- [ ] Financial model specifies clear engineering headcount, cloud infrastructure run-rates, and expected ROI.
+- [ ] FAQs address the top 3 hardest objections with concrete mitigations.
+- [ ] Audit tool validates compliance: `python skills/ai-product-and-ux/executive-memo-architect/scripts/memo_audit_toolkit.py audit --file <memo.md>`.

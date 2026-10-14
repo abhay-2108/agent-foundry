@@ -29,7 +29,7 @@ def git_log(root, n=5):
         r = subprocess.run(["git","log",f"--oneline",f"-{n}"],
                            capture_output=True,text=True,cwd=root,timeout=5)
         return r.stdout.strip()
-    except Exception:
+    except (subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
         return "(git unavailable)"
 
 def bar(done, total, w=20):
@@ -58,7 +58,8 @@ def main():
 
     try:
         metrics = json.loads((gsd/"metrics.json").read_text())
-    except Exception:
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"[WARN] Cannot load metrics.json: {e}")
         metrics = {}
 
     if metrics:

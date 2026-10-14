@@ -8,9 +8,12 @@ description: >-
 
 # Agent Trajectory Evaluator & Step Auditor
 
-An advanced diagnostic skill focused on evaluating the **path** an autonomous agent took to solve a problem—auditing intermediate tool calls, reasoning traces, parameter selections, and efficiency bottlenecks.
+## Overview
 
-## When to Use This Skill
+Audits, benchmarks, and optimizes autonomous agent tool execution trajectories. Analyzes tool call sequences, detects redundant loops, flags reasoning thrashing, and scores step-level efficiency rather than just the final conversational output.
+
+## When to Use
+
 - When an agent arrives at the correct final answer, but took 15 tool calls when it only needed 2.
 - When diagnosing agent thrashing (calling the same search tool repeatedly with minor query variations).
 - When benchmarking autonomous coding agents, customer support bots, or research crawlers.
@@ -18,6 +21,9 @@ An advanced diagnostic skill focused on evaluating the **path** an autonomous ag
 - Trigger phrases: `"evaluate trajectory"`, `"audit tool calls"`, `"agent efficiency"`, `"step-level evaluation"`, `"debug agent loop"`.
 
 ---
+- **When NOT to use**: Evaluating single-turn prompt output text quality (use `llm-evals-engineer`).
+
+## Core Process & Trajectory Audit Methodology
 
 ## The Trajectory Diagnostic Matrix
 
@@ -89,22 +95,26 @@ Score the execution trace on a 1–5 scale:
 - Add a few-shot demonstration in the agent's prompt showing how to directly pipe netstat output into task termination.
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"If the agent reached the goal, the trajectory efficiency doesn't matter."* | An agent that took 25 tool calls and burned $5 in tokens to do a 3-step task is commercially unviable; trajectory efficiency is critical. |
+| *"Agents never enter infinite loops if the model is smart."* | Even frontier models enter repetitive tool retry loops when error messages lack actionable feedback; loop detection is mandatory. |
+| *"Tool errors should always cause the agent to retry the same tool immediately."* | Immediate identical retries produce reasoning thrashing; agents must adjust parameters or fall back to alternative tools. |
+| *"We only need to evaluate the final conversation turn."* | Evaluating only the final turn misses catastrophic side-effects, unauthorized tool calls, and wasted intermediate API tokens. |
 
-1. **End-State Blindness (Ignoring Trajectory Waste)**: Celebrating that an agent arrived at the correct answer while ignoring that it took 45 meandering tool steps (costing $2.50 in API tokens) when 3 steps were sufficient. Always audit path directness alongside final correctness.
-2. **Repetitive Tool Invocations on Failure**: Permitting an agent to execute the identical failing tool call or query repeatedly without altering arguments or diagnosing the error. Consecutive identical tool failures must trigger an immediate circuit breaker.
-3. **Unbounded Exploratory Thrashing**: Allowing an agent to list directory after directory aimlessly without formulating an explicit hypothesis. Subagents must establish a search plan before inspecting files.
-4. **Over-Optimizing for Step Count over Safety**: Penalizing an agent for executing pre-flight verification checks (e.g., checking git status or running test suites before modifying code) in the pursuit of minimal step counts. Distinguish between defensive validation steps and redundant thrashing.
+## Red Flags
 
----
+- Agent executing the identical tool call and arguments more than twice in succession.
+- Trajectories where >40% of steps consist of failed tool executions.
+- Agent thrashing between unrelated files without formulating an explicit inspection plan.
+- Context window exhaustion caused by unpruned tool output payloads.
 
-## Quality Checklist
+## Verification
 
-- [ ] Every execution step is classified as Optimal, Necessary, Redundant, or Error.
-- [ ] Path directness ratio is calculated: $\text{Directness} = \text{Optimal Steps} / \text{Actual Steps}$.
-- [ ] Consecutive duplicate tool invocations are flagged as thrashing defects.
-- [ ] Root causes for suboptimal branches are identified (prompt ambiguity, missing tool, bad schema).
-- [ ] Concrete prompt remediations or few-shot examples are provided to eliminate identified detours.
-- [ ] Trajectory evaluation checks whether intermediate state checkpoints were respected.
+After completing the workflow, confirm:
+- [ ] Trajectory trace maps complete sequence of states, thoughts, tool invocations, and returns.
+- [ ] Loop detection algorithms flag redundant tool calls and reasoning thrashing.
+- [ ] Step-level efficiency score (minimal path vs actual path) is computed.
+- [ ] Recommendations provide concrete prompt or schema optimizations to eliminate wasted turns.

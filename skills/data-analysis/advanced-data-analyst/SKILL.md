@@ -9,9 +9,12 @@ description: >-
 
 # Advanced Data Analyst & Analytics Intelligence
 
-Acts as a Lead Data Analyst and Analytics Engineer. Conducts end-to-end data investigations across raw CSVs, Parquet, SQLite, DuckDB, and enterprise data warehouses. Uncovers non-obvious correlations, detects distributional anomalies, generates production-grade analytical SQL, and synthesizes raw tables into decision-ready executive insights.
+## Overview
 
-## When to Use This Skill
+Analyzes structured, tabular, and time-series datasets using reproducible Python (Pandas, Polars, DuckDB) and analytical SQL (window functions, cohort retention, funnel conversion). Discovers hidden patterns, quantifies trends, and formulates high-impact business insights.
+
+## When to Use
+
 - When tasked with exploring, querying, or analyzing any tabular dataset (CSV, JSON, Parquet, SQL).
 - When writing analysis, transformation, or statistical scripts in Python (Pandas, Polars, Scipy, DuckDB).
 - When authoring complex analytical SQL queries (window functions, cohorts, retention, funnels, CTEs).
@@ -20,6 +23,9 @@ Acts as a Lead Data Analyst and Analytics Engineer. Conducts end-to-end data inv
 - Trigger phrases: `"analyze this dataset"`, `"write a python analysis script"`, `"write an analytical SQL query"`, `"find patterns in this data"`, `"extract insights"`, `"cohort retention analysis"`, `"funnel analysis"`.
 
 ---
+- **When NOT to use**: Training deep neural networks (use `ml-feature-and-model-lab`) or real-time event streaming (use `streaming-and-event-driven`).
+
+## Core Process & 5-Phase Analytical Workflow
 
 ## The 5-Phase Analytical Workflow
 
@@ -182,22 +188,26 @@ Never present raw tables without interpretation. Format every conclusion using t
 4. **Recommended Action (What to do)**: Concrete, testable operational recommendation with an owner and deadline.
    - *Example*: "Cap tier-1 shipping subsidies at $250 per order and re-negotiate bulk freight rates prior to Q3 renewals."
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Eyeballing the first 10 rows is enough to understand column distributions."* | Small samples hide extreme outliers, multimodal distributions, and categorical drift; automated profiling and summary statistics are required. |
+| *"Dropping missing rows is fine if the dataset is large."* | Dropping rows without analyzing missingness mechanisms (MCAR vs. MAR/MNAR) introduces massive selection bias and skews aggregate calculations. |
+| *"Correlation implies a causal business relationship."* | Correlation can be driven by confounding variables or sample selection artifacts; always state alternative causal hypotheses. |
+| *"Presenting a raw chart without annotations is self-explanatory."* | Unannotated charts lead to misinterpretation; business executives need explicit callout annotations and 'So What?' executive action items. |
 
-1. **Correlation as Causation**: Claiming variable X "caused" metric Y because $r = 0.82$. Always state correlation as an association until verified by randomized A/B experimentation or instrumental variable analysis.
-2. **Ignoring Survivorship Bias**: Analyzing only active users when computing retention or satisfaction, ignoring churned cohorts who left due to product failure.
-3. **Unchecked SQL Cartesian Joins**: Joining on non-unique keys causing silent row multiplication and hyper-inflated metric aggregations. Always check `COUNT(*)` before and after joins.
-4. **In-Memory Loops Over Large Datasets**: Writing Python `for` loops across millions of rows instead of vectorized operations, Polars, or DuckDB queries.
-5. **Misleading Visualizations**: Using pie charts with $>4$ slices, 3D charts, or truncated Y-axes on bar charts.
+## Red Flags
 
----
+- Reporting percentage changes on tiny base sample sizes (e.g. 'conversion grew 100%' when users went from 1 to 2).
+- Writing analytical queries without handling division by zero (`NULLIF(denominator, 0)`).
+- Failing to check for duplicate records after performing relational `JOIN` operations.
+- Generating data visualizations with truncated axes without explicitly labeling the distortion.
 
-## Quality Checklist
+## Verification
 
-- [ ] Data cleaning audited for missingness mechanisms and outlier boundaries.
-- [ ] Analysis scripts use vectorized operations with 0 manual row iterations.
-- [ ] SQL queries use explicit column aliases, CTE modularization, and window functions.
-- [ ] Disaggregated analysis verified against Simpson's Paradox across key cohorts.
-- [ ] Executive summary delivers the 4-part Insight Architecture (Finding $\rightarrow$ Context $\rightarrow$ Impact $\rightarrow$ Action).
+After completing the workflow, confirm:
+- [ ] Data quality audit checks for nulls, cardinality, duplicate primary keys, and outlier bounds.
+- [ ] Analytical SQL queries utilize window functions and CTEs with reproducible seeds.
+- [ ] Every chart includes a clear title, labeled axes with units, and a takeaway callout box.
+- [ ] Executive summary delivers quantifiable business recommendations with expected impact.

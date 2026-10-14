@@ -8,11 +8,11 @@ description: >-
 
 # Workspace Researcher & Technical Intelligence
 
-A rigorous intelligence-gathering and synthesis skill designed to produce high-signal, zero-fluff research reports with traceable citations, cross-verified facts, and hallucination safeguards.
+## Overview
 
----
+Conducts structured codebase and multi-source web intelligence gathering. Cross-verifies technical claims across official documentation, GitHub repositories, and package registries, detects SEO spam, and synthesizes citation-backed research briefs.
 
-## When to Use This Skill
+## When to Use
 
 - When investigating external APIs, SDK libraries, dependencies, or open-source packages.
 - When conducting competitor analysis, technical vendor evaluations, or architectural benchmarking.
@@ -21,6 +21,9 @@ A rigorous intelligence-gathering and synthesis skill designed to produce high-s
 - Trigger phrases: `"research this library"`, `"compare frameworks"`, `"technical investigation"`, `"find documentation"`, `"evaluate alternatives"`.
 
 ---
+- **When NOT to use**: Writing code implementation PRs (use `fullstack-engineer`) or formal Amazon-style 6-page strategy memos (use `executive-memo-architect`).
+
+## Core Process & Research Triangulation
 
 ## Core Principles: The Triangulation Protocol
 
@@ -82,22 +85,26 @@ Format technical findings using this structured markdown brief:
 3. Local Codebase Reference: `src/service.py:L45-L60`
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"The first search result snippet is accurate enough for technical facts."* | First-page SEO spam blogs frequently copy outdated or hallucinated code; always verify against primary source repositories or official docs. |
+| *"We can cite secondary Medium articles instead of official documentation."* | Secondary blog posts go stale; technical briefs must cite official API specs, changelogs, or verified commit hashes. |
+| *"One source is sufficient if it comes from an established website."* | Critical architectural trade-offs require triangulation across at least two independent sources or active benchmarks. |
+| *"Code search across the local repo isn't needed if we remember the file."* | Memory is lossy; ripgrep or semantic search ensures all call sites and edge-case usages are accounted for. |
 
-1. **The SEO Scraper Trap**: Relying on unverified aggregator blogs (e.g., GeeksForGeeks, Medium summaries) that recycle outdated code patterns. Always navigate to the official source repository or official docs.
-2. **Anchoring on Stale Documentation**: Quoting code patterns from older library generations (e.g., Pydantic v1 syntax, LangChain 0.0.x chains, React class components) without checking the current major version.
-3. **Vendor Benchmark Credulity**: Accepting vendor-published performance benchmarks uncritically. Vendors routinely tune benchmarks to favorable conditions; always look for third-party or reproducible harness results.
-4. **Context Window Flooding**: Dumping thousands of lines of unparsed HTML into context. Always distill pages down to core code snippets, schema tables, and release notes before synthesizing.
+## Red Flags
 
----
+- Citing deprecated API methods or abandoned repositories (last commit > 2 years ago).
+- Presenting performance claims without citing reproducible benchmark environments and metrics.
+- Research summaries lacking clickable markdown file links (`[file.py](file:///path)`) to local evidence.
+- Uncritical acceptance of vendor marketing claims without independent engineering evaluation.
 
-## Quality Checklist
+## Verification
 
-- [ ] Every non-trivial assertion includes a clickable, verified URL or local file path citation.
-- [ ] Claims regarding library capabilities match the current major version (verified against registry/repo).
-- [ ] Performance and security claims are cross-checked across at least two independent sources.
-- [ ] Conflicting viewpoints between marketing claims and actual GitHub issue tracker bugs are explicitly noted.
-- [ ] Code snippets extracted from research are syntactically valid and modern.
-- [ ] Report includes a clear, decisive executive summary rather than open-ended ambiguity.
+After completing the workflow, confirm:
+- [ ] All external claims are grounded in official documentation or GitHub source repositories.
+- [ ] Local codebase claims include verified line references (`file://...#L10-L25`).
+- [ ] Technical comparisons contrast at least two alternative approaches with explicit trade-off matrices.
+- [ ] Research brief is structured with Executive Summary, Findings, Trade-off Matrix, and Recommendations.

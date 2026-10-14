@@ -8,14 +8,20 @@ description: >-
 
 # MCP Tool Integrator & Protocol Engine
 
-The definitive skill for implementing, configuring, and testing tools using Anthropic's open **Model Context Protocol (MCP)** and native function calling interfaces.
+## Overview
 
-## When to Use This Skill
+Designs, implements, and debugs Model Context Protocol (MCP) tool servers and agent tool integrations using FastMCP. Enforces strict Pydantic/Zod tool input schemas, timeout policies, error envelopes, and prevents agent tool hallucinations.
+
+## When to Use
+
 - When building custom MCP servers in TypeScript or Python.
 - When exposing local files, databases, or third-party APIs to AI agents.
 - When designing tool definitions (names, descriptions, parameter schemas) to maximize tool-calling accuracy.
 - When diagnosing tool calling failures, hallucinated arguments, or JSON validation errors.
 - Trigger phrases: `"build MCP server"`, `"create agent tool"`, `"tool calling"`, `"function calling schema"`, `"debug tool error"`.
+- **When NOT to use**: Designing HTTP REST APIs for human frontends (use `backend-architecture`).
+
+## Core Process & FastMCP Tool Architecture
 
 ## MCP Protocol Architecture & Execution Sequence
 
@@ -129,20 +135,26 @@ if __name__ == "__main__":
     mcp.run()
 ```
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Missing Tool Execution Timeouts**: Permitting third-party API calls or database connections to hang indefinitely without a timeout. This locks the host agent process in an unrecoverable waiting state. Always enforce explicit execution timeouts (e.g., `timeout=15.0`).
-2. **Dumping Raw Unhandled Tracebacks**: Allowing unhandled Python or Node exceptions to crash the JSON-RPC server or return opaque stack traces. Always catch exceptions and return a structured envelope (`{"status": "error", "message": "...", "retryable": True}`) so the model can self-correct.
-3. **Context-Busting Payload Flooding**: Returning unpaginated multi-megabyte responses (e.g., thousands of raw database rows). Always truncate results, provide pagination metadata (`offset`, `limit`), and summarize large payloads.
-4. **Underspecified Parameter Schemas**: Defining tools with vague names (`process_data`) and unconstrained arguments (`arg: str`). Without explicit field descriptions, regex patterns, or enums, models routinely hallucinate non-existent parameter values.
+| Rationalization | Reality |
+|---|---|
+| *"Docstrings in tools are just comments; the agent reads the code."* | Agents do NOT read server code; the tool description and parameter docstrings in JSON-RPC schemas are the agent's sole guide to invoking tools correctly. |
+| *"Tools can return raw unstructured strings; the LLM will figure it out."* | Unstructured return strings cause parsing errors in automated agent loops; structured JSON returns with status codes are required. |
+| *"We don't need timeout handling on tool calls."* | A hanging database query or frozen subprocess will freeze the entire agent session indefinitely without strict timeouts. |
+| *"Allowing shell commands in tools without path validation is fine if the user requested it."* | Unrestricted tool execution leads to command injection and unauthorized file tampering; strict path bounds checking is mandatory. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Tool parameters lacking explicit types, default values, or descriptive docstrings.
+- Tools returning raw Python tracebacks or unhandled exceptions instead of structured error responses.
+- Long-running tool execution without timeout enforcement (maximum 30s recommended for synchronous tools).
+- Tool schemas with overlapping or ambiguous descriptions that confuse the agent's tool-selection router.
 
-- [ ] Every tool parameter has an explicit `description`, type constraint, and reasonable defaults.
-- [ ] Numeric parameters enforce strict boundaries (`ge`, `le`) and strings use enums where appropriate.
-- [ ] Tools enforce strict execution timeouts (10–30s max) to prevent agent hanging.
-- [ ] Tool exceptions are caught and returned as actionable, structured error envelopes.
-- [ ] High-volume query outputs are truncated or paginated with clear indicators for next page fetching.
-- [ ] Destructive tools (write, delete, mutate) validate user permissions or require confirmation tokens.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] All tools define typed input arguments using Pydantic / Zod models with field descriptions.
+- [ ] Tool outputs return structured responses: `{"success": bool, "data": ..., "error": ...}`.
+- [ ] Timeout policies and path-traversal safeguards are active and tested.
+- [ ] MCP server passes self-test verification: `python mcp_servers/agent_foundry_server.py --test`.

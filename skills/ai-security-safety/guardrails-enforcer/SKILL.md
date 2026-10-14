@@ -8,9 +8,12 @@ description: >-
 
 # Guardrails Enforcer & Runtime Safety Controller
 
-A production safety skill that installs programmable, deterministic guardrails around language models and autonomous agents. Acts as an active firewall intercepting unsafe inputs and sanitizing model outputs before they reach users.
+## Overview
 
-## When to Use This Skill
+Implements programmatic runtime AI safety filters, input sanitization, PII redaction, topic boundaries, toxicity filtering, and output hallucination verification across LLM applications and agent tool calls.
+
+## When to Use
+
 - When building public-facing AI bots where toxic, biased, or harmful responses must be prevented.
 - When preventing Personally Identifiable Information (PII) leakage (SSNs, credit cards, passwords).
 - When enforcing strict topic boundaries (`"Only answer questions about our SaaS product; decline sports/politics"`).
@@ -18,6 +21,9 @@ A production safety skill that installs programmable, deterministic guardrails a
 - Trigger phrases: `"set up guardrails"`, `"PII redaction"`, `"content filtering"`, `"NeMo Guardrails"`, `"Llama Guard integration"`.
 
 ---
+- **When NOT to use**: Static source-code vulnerability scanning (use `security-vulnerability-scanner`) or prompt injection adversarial red-teaming (use `prompt-injection-red-teamer`).
+
+## Core Process & Guardrail Implementation
 
 ## The Dual-Layer Guardrail Architecture
 
@@ -80,20 +86,26 @@ def check_safety_with_llama_guard(model_output: str) -> bool:
     ...
 ```
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **ReDoS (Regular Expression Denial of Service)**: Writing vulnerable, catastrophic-backtracking regex patterns (e.g., `([\w\.-]+)+@[\w\.-]+`) for PII masking. A malicious user submitting repeated whitespace or special characters can freeze the server CPU for minutes. Always use atomic grouping, Google RE2, or dedicated libraries like Microsoft Presidio.
-2. **Output-Only Guardrails Blindness**: Intercepting toxicity only on the generated output while letting raw, malicious user inputs reach downstream database tools and vector search retrieval. Guardrails must be enforced as a dual-layer sandwich (Input Rails $\rightarrow$ Agent $\rightarrow$ Output Rails).
-3. **Heavyweight LLM Calls for Simple Filter Checks**: Calling a large 70B LLM to perform basic content moderation, adding 2+ seconds of latency to every interaction. Layer checks hierarchically: (1) Deterministic regex/heuristics (0ms), (2) Embedding cosine bounds (15ms), and (3) Small specialized classifiers like Llama-Guard-3-1B (<150ms).
-4. **Preachy, Moralizing Fallback Refusals**: Emitting patronizing or apologetic AI lectures (*"As an AI, I am ethically prohibited from..."*). Refusals must be professional, neutral, and clear: *"I can only assist with account administration and billing queries."*
+| Rationalization | Reality |
+|---|---|
+| *"A strong system prompt is enough to prevent safety violations."* | System prompts are easily bypassed by prompt injection and jailbreaks; runtime programmatic guardrails (regex, Presidio, Llama Guard) are mandatory. |
+| *"PII redaction adds too much latency to user queries."* | Fast regex and compiled NER tokenizers execute in sub-millisecond time and prevent catastrophic GDPR/HIPAA compliance breaches. |
+| *"Output checks are redundant if the input was validated."* | Models can hallucinate toxic content, leak internalized training secrets, or hallucinate dangerous code even on benign inputs. |
+| *"We can log raw prompts and outputs to debug guardrail false positives."* | Logging unredacted inputs and outputs persists user PII, API keys, and sensitive tokens into audit log indices. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Relying solely on LLM self-moderation without deterministic programmatic filters.
+- Unmasked credit card numbers, social security numbers, or API keys in application logs.
+- Failing to implement timeout and fallback policies when an external guardrail service is unreachable.
+- Directly streaming raw LLM tokens to the user before passing basic toxicity and safety gates.
 
-- [ ] Dual-layer architecture: Input Rails screen user prompts and Output Rails verify generated responses.
-- [ ] PII redaction patterns are ReDoS-safe and do not exhibit catastrophic backtracking on long strings.
-- [ ] Guardrail execution overhead is benchmarked at $<150\text{ms}$ total latency.
-- [ ] Topical bounds reliably deflect off-topic queries without breaking valid edge-case user questions.
-- [ ] Blocked events emit structured security telemetry logs with trigger rules and redacted payloads.
-- [ ] Safe fallback messages are concise, neutral, and professional without moralizing preambles.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Input pipeline scrubs credit card numbers, SSNs, emails, and phone numbers before LLM ingestion.
+- [ ] Colang / NeMo Guardrails or Llama Guard checks execute on input and output vectors.
+- [ ] Safety fallbacks respond gracefully with neutral refusal messages without revealing system instructions.
+- [ ] Automated guardrail test suite passes with zero false-negative leaks on benchmark test payloads.

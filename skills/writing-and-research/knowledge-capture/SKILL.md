@@ -1,18 +1,16 @@
 ---
 name: knowledge-capture
-description: >-
-  Use this skill to convert raw meeting transcripts, messy chat threads, brainstorming discussions,
-  and ad-hoc notes into structured, searchable knowledge artifacts. Extracts clear decisions,
-  assigned action items with deadlines, resolves conflicting viewpoints, and documents ADR rationale.
+description: Use this skill when converting raw meeting transcripts, chat threads,
+  and messy notes into structured, searchable knowledge artifacts and ADR decisions.
 ---
 
 # Knowledge Capture & Meeting Intelligence
 
-Transforms messy, conversational transcripts, Slack/Teams chat threads, and multi-party discussions into actionable, schema-validated knowledge records suitable for Notion, markdown wikis, or project issue trackers.
+## Overview
 
----
+Extracts structured decisions, Architecture Decision Records (ADRs), action items with assigned owners, and consensus rationale from messy meeting transcripts, Slack discussions, and brainstorm notes.
 
-## When to Use This Skill
+## When to Use
 
 - When provided with an audio transcription, Zoom/Teams transcript, or raw meeting notes.
 - When summarizing multi-turn chat threads or Slack discussions into a definitive decision document.
@@ -21,6 +19,9 @@ Transforms messy, conversational transcripts, Slack/Teams chat threads, and mult
 - Trigger phrases: `"capture meeting notes"`, `"extract action items"`, `"summarize transcript"`, `"document decision"`, `"meeting intelligence"`.
 
 ---
+- **When NOT to use**: Executing code refactoring or running automated benchmarks.
+
+## Core Process & Knowledge Synthesis Architecture
 
 ## Core Transformation Principles
 
@@ -97,22 +98,26 @@ class MeetingRecord(BaseModel):
 - [ ] Need legal review of third-party model data retention policy by next Friday (@Jordan).
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"A verbatim chronological summary is more complete than an ADR."* | Nobody reads 10-page meeting transcripts; busy stakeholders need explicit decisions, trade-offs rejected, and assigned action owners. |
+| *"Action items don't need deadlines if the owner is mentioned."* | Action items without concrete deadlines or measurable exit criteria turn into indefinite project debt. |
+| *"Minor dissenting opinions can be omitted for brevity."* | Omitting rejected alternatives hides the context of why a decision was made, leading future teams to re-litigate the same issue. |
+| *"We can infer consensus even if the transcript ends abruptly."* | Assuming agreement when discussion was unresolved causes misaligned execution; unconfirmed decisions must be flagged as open questions. |
 
-1. **Passive Voice Assignments**: Writing *"Tests should be implemented by end of week"* without a named individual owner. If everyone is responsible, no one is responsible.
-2. **Hallucinating Consensus**: Treating casual comments (*"We could perhaps try Rust"*) as binding team decisions. Only extract decisions that had explicit agreement from decision-makers.
-3. **Omitting the Rationale**: Recording *what* was chosen without *why*. Without the rationale, teams inevitably repeat the same debate 3 months later when context fades.
-4. **Vague Numerical Generalization**: Replacing concrete metrics mentioned in speech with vague adjectives (e.g., changing *"reduce latency from 450ms to under 100ms"* into *"improve system speed"*). Always capture exact figures.
+## Red Flags
 
----
+- Summaries listing general discussion topics without extracting firm decisions.
+- Action items assigned to 'the team' instead of an individual named owner.
+- ADRs missing the 'Consequences / Trade-offs' section.
+- Glossing over unresolved conflicts or technical disagreements without documenting open items.
 
-## Quality Checklist
+## Verification
 
-- [ ] Every action item has a single named owner (no anonymous or shared tasks).
-- [ ] Action items specify a concrete deliverable and an explicit deadline where discussed.
-- [ ] Rationale and rejected alternatives are preserved for every major decision.
-- [ ] Numerical targets, dates, and technical identifiers are recorded verbatim.
-- [ ] Unresolved disputes and parking lot items are explicitly distinguished from binding agreements.
-- [ ] Output conforms to clean, copy-pasteable markdown ready for team wikis or tickets.
+After completing the workflow, confirm:
+- [ ] All extracted decisions follow standard ADR format (Context, Decision, Consequences, Alternatives Considered).
+- [ ] Every action item has an individual owner, concrete deliverable, and explicit deadline.
+- [ ] Unresolved questions are segregated into a distinct 'Open Items & Blockers' section.
+- [ ] Extracted JSON schema validates cleanly against Pydantic models.

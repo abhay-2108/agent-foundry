@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "hooks": [
+    {
+      "name": "pre-sync-integrity-check",
+      "event": "pre_sync",
+      "command": "python scripts/validate_skills.py",
+      "blocking": true,
+      "description": "Validates all 41 skills, frontmatters, links, and agents before global synchronization."
+    },
+    {
+      "name": "pre-commit-secret-scan",
+      "event": "pre_commit",
+      "command": "python scripts/scan_secrets.py",
+      "blocking": true,
+      "description": "Guards against committing hardcoded API secrets or private tokens."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "agent-foundry",
+  "version": "2.0.0",
+  "description": "Enterprise-grade autonomous AI skills, specialist personas, 3-tier memory engine, and lifecycle governance.",
+  "author": "Agent Foundry Team",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/abhay-2108/agent-foundry",
+  "skills": "./skills",
+  "agents": "./agents",
+  "references": "./references",
+  "hooks": "./hooks/hooks.json"
+}

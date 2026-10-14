@@ -8,9 +8,12 @@ description: >-
 
 # Docker Container Architect & Image Optimizer
 
-A container engineering skill for creating secure, minimal, and fast-building Docker images and multi-container `docker-compose` orchestration environments.
+## Overview
 
-## When to Use This Skill
+Authors, optimizes, and secures Dockerfiles and docker-compose architectures. Enforces multi-stage builds, non-root user execution, minimal base images (Alpine/Distroless), layer caching order, and vulnerability hardening.
+
+## When to Use
+
 - When containerizing a Python, Node.js, Go, or Rust application from scratch.
 - When optimizing large Docker images (reducing gigabytes down to tens of megabytes).
 - When resolving slow image build times by optimizing Docker layer caching.
@@ -18,6 +21,9 @@ A container engineering skill for creating secure, minimal, and fast-building Do
 - Trigger phrases: `"dockerize this app"`, `"optimize Dockerfile"`, `"multi-stage build"`, `"docker-compose setup"`, `"reduce image size"`.
 
 ---
+- **When NOT to use**: Managing Kubernetes cluster networking or Helm charts (use `sre-devops-guardian`).
+
+## Core Process & Container Hardening Blueprint
 
 ## The 4 Golden Rules of Production Dockerfiles
 
@@ -112,22 +118,26 @@ volumes:
   pgdata:
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Running as `root` in the container doesn't matter because it's containerized."* | Root container escapes grant root access to the host kernel; running as a dedicated non-root user (`USER appuser`) is mandatory. |
+| *"Using the `latest` tag is convenient for auto-updating."* | `latest` tags break build reproducibility, invalidate layer caches unpredictably, and introduce unvetted breaking changes. |
+| *"Putting dependencies and source code in one `COPY . .` layer is fine."* | Copying source code before installing dependencies breaks layer caching, forcing full package reinstalls on every line edit. |
+| *"Image size doesn't matter since bandwidth is fast."* | A 2GB image takes 5x longer to deploy, consumes cluster disk quotas, and contains an enormous attack surface of unneeded binaries. |
 
-1. **Running Production Containers as Root**: Leaving the default root user active inside the container. If an attacker discovers an application-level vulnerability (e.g., RCE or command injection), they inherit root privileges over container namespaces. Always create and switch to an unprivileged system user (`USER appuser`).
-2. **Invalidating the Build Layer Cache Early**: Placing `COPY . .` *before* package manager installation steps (`RUN npm install` or `pip install`). Any trivial edit to a README or comment invalidates the dependency cache, forcing a multi-minute dependency reinstall on every build. Copy dependency manifests first, install, then copy source code.
-3. **Bloating Production Images with Build Tools**: Shipping `gcc`, `g++`, `cmake`, and header packages in the final deployment image. Use multi-stage builds to compile binaries in an SDK builder stage and copy only the compiled artifacts into a lightweight Distroless or Alpine runtime.
-4. **Missing `.dockerignore` (Secret Leakage)**: Neglecting to include a `.dockerignore` file. This routinely bundles local `.git` directories, development `.env` credentials, and local build artifacts directly into publicly accessible container image layers.
+## Red Flags
 
----
+- Containers executing as UID 0 (root) without an explicit `USER` directive.
+- Hardcoded environment secrets or passwords baked into Dockerfile `ENV` instructions.
+- Missing `.dockerignore` file, leading to `.git`, `node_modules`, or local `.env` files copied into the image.
+- Single-stage builds containing compilers, build tools, and package managers in the production runtime image.
 
-## Quality Checklist
+## Verification
 
-- [ ] Multi-stage build separates compiler toolchains from minimal runtime environments.
-- [ ] Application processes execute under a dedicated non-root user (`USER appuser`).
-- [ ] `.dockerignore` is present, excluding `.git`, `.env`, test files, and local build caches.
-- [ ] Dependency manifests are copied and installed *before* application source code to maximize caching.
-- [ ] Base images pin specific minor/patch tags (e.g. `node:20.11-alpine`) rather than floating `latest`.
-- [ ] Container includes automated `HEALTHCHECK` commands to enable orchestrator restarts.
+After completing the workflow, confirm:
+- [ ] Dockerfile utilizes multi-stage builds, copying only compiled artifacts to the minimal runtime stage.
+- [ ] Container runs as a dedicated non-root user with minimal filesystem permissions.
+- [ ] Layer ordering optimizes cache hit rates (package manifests copied before application source).
+- [ ] Container build and healthcheck verify cleanly: `docker build -t app . && docker run --rm app healthcheck`.

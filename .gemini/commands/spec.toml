@@ -1,0 +1,2 @@
+description = "Draft a technical specification and architecture plan. Enforces STOP-after-spec gate."
+prompt = "Use the plan-and-execute workflow to: $ARGUMENTS"

@@ -9,9 +9,12 @@ description: >-
 
 # Exploratory Data Analysis (EDA) & Data Cleaning
 
-Acts as a Lead Data Engineer / Statistician. Transforms raw, messy data into analysis-ready, modeling-safe datasets through a rigorous 5-phase profiling and cleaning pipeline. Produces fully reproducible cleaning scripts and a structured Data Quality Report with quantified confidence.
+## Overview
 
-## When to Use This Skill
+Profiles, audits, cleans, and preprocesses tabular datasets. Detects multivariate outliers, handles missing value imputation, analyzes skewness, computes Variance Inflation Factors (VIF) to detect multicollinearity, and generates a structured Data Quality Report.
+
+## When to Use
+
 - When receiving a new dataset (CSV, Parquet, Excel, JSON, SQL) requiring initial inspection.
 - When cleaning dirty data: handling missing values, duplicates, type errors, and malformed strings.
 - When identifying outliers, distribution skews, high cardinality, and multicollinearity before training.
@@ -20,6 +23,9 @@ Acts as a Lead Data Engineer / Statistician. Transforms raw, messy data into ana
 - Trigger phrases: `"perform EDA"`, `"clean this dataset"`, `"data profiling"`, `"handle missing values"`, `"detect outliers"`, `"data quality report"`, `"audit this CSV"`.
 
 ---
+- **When NOT to use**: Writing predictive production model serving endpoints (use `ml-feature-and-model-lab`).
+
+## Core Process & Exploratory Data Auditing Methodology
 
 ## The 5-Phase Data Audit Pipeline
 
@@ -243,25 +249,26 @@ python skills/data-analysis/eda-and-data-cleaning/scripts/eda_toolkit.py --test
 python skills/data-analysis/eda-and-data-cleaning/scripts/eda_toolkit.py --file data.csv --target churn
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Imputing missing values with the column mean is always safe."* | Mean imputation distorts variance, destroys feature covariance, and biases multimodal distributions; use median or IterativeImputer. |
+| *"Outliers should always be deleted from the dataset."* | Outliers may be the most valuable data points (e.g. fraud detection); winsorization or robust scalers should be evaluated before deletion. |
+| *"Checking multicollinearity isn't necessary for tree models."* | Severe multicollinearity inflates feature variance, distorts tree importance metrics, and destabilizes model interpretations. |
+| *"We can skip data type conversions if Pandas loaded the CSV without error."* | Default CSV parsers frequently infer numeric IDs as floats or dates as strings, degrading memory efficiency and calculation precision. |
 
-1. **Pre-Split Leakage** — Fitting imputers or scalers on the full dataset before the train/test split. Test-set statistics contaminate training. **Fix**: Always split first, then `fit` only on `X_train`.
-2. **Blind `dropna()`** — Dropping every row with any null silently discards 40–60% of data and introduces survivorship bias. **Fix**: Profile missingness mechanisms; impute strategically.
-3. **Mean Imputing Skewed Columns** — Revenue, latency, and counts are power-law distributed; mean imputation drags the distribution. **Fix**: Use median for columns with `|skew| > 1.0`.
-4. **Auto-Deleting Fraud Outliers** — In anomaly detection, outliers ARE the target signal. **Fix**: Domain-check before any outlier removal.
-5. **Ignoring Categorical Cardinality** — High-cardinality text columns (user agent strings, IP addresses) passed directly into models cause memory explosion and target leakage. **Fix**: Flag cardinality > 50% for exclusion.
+## Red Flags
 
----
+- Imputing missing values on the combined dataset before splitting train and test sets (causes data leakage).
+- Ignoring high VIF scores (> 10) in linear or logistic models.
+- Failing to verify datetime monotonic ordering in time-series datasets.
+- Modifying raw data files in-place instead of saving cleaned versions with lineage documentation.
 
-## Quality Checklist
+## Verification
 
-- [ ] Train/test split performed *before* any imputation, scaling, or encoding
-- [ ] Missing rates profiled per column; mechanism (MCAR/MAR/MNAR) classified
-- [ ] `is_missing` indicator columns added for MNAR-suspect features
-- [ ] Outlier detection method selected based on distribution skewness
-- [ ] VIF computed; multicollinear pairs (VIF > 10) flagged for removal
-- [ ] Target leakage check run; columns with |r| > 0.95 to target excluded
-- [ ] Data Quality Report generated and reviewed before model training begins
-- [ ] Companion script `eda_toolkit.py --test` passes with zero errors
+After completing the workflow, confirm:
+- [ ] Data Quality Report documents shape, memory footprint, missingness percentages, and duplicate counts.
+- [ ] Outliers are diagnosed using both IQR and Z-score methods with documented treatment strategies.
+- [ ] Multicollinearity is audited via correlation matrices and VIF calculations.
+- [ ] Cleaned dataset exports with zero missing values and correct datatype castings.

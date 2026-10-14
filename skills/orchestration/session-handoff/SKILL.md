@@ -1,21 +1,24 @@
 ---
 name: session-handoff
-description: >-
-  Use this skill at the conclusion of a work session, prior to context resets,
-  when handing off tasks between agents, or when pausing work on a multi-day initiative.
-  Maintains a persistent, machine-readable HANDOFF.md ledger tracking accomplishments,
-  active state, blockers, and next immediate steps.
+description: Use this skill when concluding a work session, prior to context resets,
+  transferring work between agents, or recording active progress in HANDOFF.md.
 ---
 
 # Session Handoff
 
-Prevents context loss, duplicate investigation, and broken workflows across agent session boundaries by maintaining a single source of truth in `HANDOFF.md`.
+## Overview
 
-## When to Use This Skill
+Maintains a persistent, machine-readable `HANDOFF.md` ledger across session resets, agent transfers, and multi-day initiatives. Tracks accomplished milestones, active in-flight state, known blockers, and immediate next steps to eliminate onboarding memory loss.
+
+## When to Use
+
 - At the end of a user session or before reaching context limits.
 - When an agent completes an assigned phase and hands off execution to another agent.
 - When switching between major features or divergent git branches.
 - Whenever a user asks: "What's the status?", "Where did we leave off?", or "Summarize current state".
+- **When NOT to use**: Transient, momentary conversational pauses within the same active session.
+
+## Core Process & Persistent Handoff Ledger Architecture
 
 ## The `HANDOFF.md` Ledger Format
 
@@ -88,16 +91,26 @@ When starting a new session or receiving a prompt after a reset:
 2. Echo a brief 2-bullet summary to the user: "Resuming from [Milestone]; proceeding with [Next Immediate Action]".
 3. Continue execution directly without re-investigating established facts.
 
-## Anti-Patterns & Traps to Avoid
-- **Unanchored Pronouns & Ambiguous Targets**: Describing next steps as "fix that bug" or "clean up the script" without exact relative/absolute file paths and symbol names, causing successor agents to re-scan the entire codebase.
-- **Omitting In-Flight Terminal Commands & Uncommitted State**: Leaving git worktrees dirty or background processes running without recording exact PID/command state, leading to file access locks or duplicated executions.
-- **Stale Ledger Bloat**: Appending endless narrative logs to `HANDOFF.md` instead of maintaining a concise, overwritten state document with clear Active Context vs. Historical Milestones.
-- **Silent Assumption Resumption**: Resuming execution without confirming that modified dependencies, virtual environments, or environment variables in the previous session are still active.
+## Common Rationalizations
 
-## Quality Checklist
-- [ ] `HANDOFF.md` contains exact file paths, line ranges, and function/class identifiers.
-- [ ] Pending, in-flight, or failed CLI commands and test outcomes are explicitly recorded.
-- [ ] Architectural decisions, deferred trade-offs, and user instructions are documented with rationale.
-- [ ] Actionable immediate next steps are ranked chronologically without vague instructions.
-- [ ] The handoff document is formatted with clean markdown, valid headings, and no dangling references.
-- [ ] Successor agent can resume work autonomously within 1 turn without asking clarifying questions.
+| Rationalization | Reality |
+|---|---|
+| *"The next session can just read the git log to see what was done."* | Git logs show what changed, but they do NOT show what failed, why certain decisions were made, or what in-flight blockers remain. |
+| *"I'll write the handoff note tomorrow when I resume work."* | Working memory degrades immediately; write the handoff ledger at the conclusion of the session while state is fresh. |
+| *"A 2-sentence summary in chat is enough."* | Chat messages are lost across context resets; handoff ledgers must be persisted to disk in `HANDOFF.md`. |
+| *"Listing next steps isn't necessary because the roadmap is clear."* | Roadmaps have high-level milestones; next sessions need the immediate command, file, or test to run next. |
+
+## Red Flags
+
+- Ending a session with uncommitted dirty working tree changes without documenting state in `HANDOFF.md`.
+- Handoff notes describing vague achievements ('worked on backend') without listing modified files and tests.
+- Missing the 'Immediate Next Step' command or action for the resuming agent.
+- Failing to document unresolved bugs or environmental blockers.
+
+## Verification
+
+After completing the workflow, confirm:
+- [ ] `HANDOFF.md` is updated with Current State, Completed Items, Active Blockers, and Immediate Next Steps.
+- [ ] Modified file paths and git commit hashes are explicitly cited.
+- [ ] Exact CLI command to resume verification is documented.
+- [ ] Handoff validator passes cleanly: `python skills/orchestration/session-handoff/scripts/validate_handoff.py`.

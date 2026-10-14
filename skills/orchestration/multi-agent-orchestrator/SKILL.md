@@ -8,14 +8,20 @@ description: >-
 
 # Multi-Agent Orchestrator & Swarm Architect
 
-A specialized architecture skill for designing, coordinating, and governing multi-agent systems. Enforces clean communication contracts, bounded recursion, and robust state coordination across agent swarms (e.g., LangGraph, CrewAI, AutoGen/AG2, Swarms).
+## Overview
 
-## When to Use This Skill
+Designs, implements, and coordinates multi-agent systems and agent swarm topologies (Hierarchical, Router, Peer Consensus, Sequential DAG). Manages shared state, task handoffs, loop prevention, and termination guarantees.
+
+## When to Use
+
 - When designing systems with 2 or more specialized cooperating agents.
 - When selecting an agent topology (Supervisor/Worker, Peer Debate, Router/Dispatcher, Sequential Pipeline).
 - When debugging agent swarms stuck in infinite ping-pong loops or hallucinated delegating traps.
 - When structuring shared state, checkpointing, and agent-to-agent (A2A) message protocols.
 - Trigger phrases: `"multi-agent system"`, `"agent swarm"`, `"orchestrate agents"`, `"LangGraph workflow"`, `"CrewAI setup"`, `"agent collaboration"`.
+- **When NOT to use**: Single-agent prompt engineering or simple linear script execution.
+
+## Core Process & Multi-Agent Swarm Architecture
 
 ## Core Multi-Agent Topologies
 
@@ -97,20 +103,26 @@ class AgentState(TypedDict):
 - If an agent generates the exact same tool call or output twice consecutively, trigger a circuit breaker and escalate to the supervisor.
 - Log message traces between agents with correlation IDs for observability.
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **The Infinite Ping-Pong Trap**: Reviewer and Coder agents locked in an endless critique loop over stylistic nits. Always enforce a hard `max_iterations <= 5` and a deterministic consensus judge that breaks deadlocks.
-2. **Context Window Contamination**: Blindly passing the full conversation transcript to all worker subagents. Filter the shared state to only the minimal input fields each worker requires.
-3. **State Overwrite Race Conditions**: Appending to shared lists from concurrent worker nodes without an explicit reducer (e.g. `Annotated[List[str], operator.add]`), causing one worker's output to silently clobber another's.
-4. **Unbounded Delegation Depth**: Allowing subagents to spawn child subagents indefinitely. Hard-cap delegation depth to 2 levels maximum.
+| Rationalization | Reality |
+|---|---|
+| *"More agents are always better than one agent."* | Unnecessary multi-agent complexity inflates latency, multiplies API token costs, and introduces fragile communication failure points. |
+| *"Agents can communicate via free-form conversational text."* | Free-form chat between agents causes conversational drift and parsing failures; agents must communicate via typed JSON message envelopes. |
+| *"A central orchestrator can handle 50 agents simultaneously."* | Monolithic orchestrators become massive context bottlenecks; hierarchical sub-teams or isolated DAGs are required at scale. |
+| *"Termination conditions aren't needed if the prompt says 'stop when done'."* | Autonomous agent swarms enter infinite conversational loops without deterministic step limits and termination predicates. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Agents exchanging informal greetings ('Hello Agent B, I have your task') instead of structured JSON payloads.
+- Missing maximum turn limits (e.g. `max_iterations = 10`), risking runaway API billing.
+- Circular delegation loops where Agent A delegates to Agent B who delegates back to Agent A.
+- State mutations shared across agents without concurrency locks or transactional boundaries.
 
-- [ ] Hard recursion and iteration limits are set on the graph runtime (`recursion_limit <= 25`, `max_iterations <= 5`).
-- [ ] Shared state uses a strictly typed schema (`TypedDict` / Pydantic) with reducer annotations for list fields.
-- [ ] Every multi-agent cycle has a deterministic exit condition that guarantees termination.
-- [ ] Worker subagents receive filtered, role-specific context rather than full raw history.
-- [ ] Repetitive tool calls trigger a circuit breaker that halts execution or escalates to human review.
-- [ ] Correlation IDs are propagated across agent-to-agent message boundaries for tracing.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Swarm topology (DAG, Hierarchical, Router) is explicitly selected based on task dependency analysis.
+- [ ] Agent communications use typed message schemas with correlation IDs.
+- [ ] Hard termination conditions and loop-detection breakers are active and tested.
+- [ ] Workflow engine validates step completion against formal acceptance criteria: `python workflows/workflow_engine.py --test`.

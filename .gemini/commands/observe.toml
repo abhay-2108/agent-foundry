@@ -1,0 +1,2 @@
+description = "Inspect OpenTelemetry traces, token budgets, and latency metrics."
+prompt = "Use the llm-observability workflow to: $ARGUMENTS"

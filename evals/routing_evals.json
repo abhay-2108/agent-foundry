@@ -1,0 +1,127 @@
+[
+  {
+    "id": "eval-01",
+    "input": "We have an open-ended idea for an AI developer platform, but need to explore architectural trade-offs and alternatives first.",
+    "expected_skill": "brainstorming"
+  },
+  {
+    "id": "eval-02",
+    "input": "Break down this complex 3-week project into vertical slices, milestones, and task contracts so we don't hit the vibe coding ceiling.",
+    "expected_skill": "get-shit-done"
+  },
+  {
+    "id": "eval-03",
+    "input": "Plan this multi-step backend refactoring with explicit rollback checkpoints and a mandatory STOP-after-spec gate.",
+    "expected_skill": "plan-and-execute"
+  },
+  {
+    "id": "eval-04",
+    "input": "Draft an Amazon-style 6-page narrative memo for the VP of Engineering justifying our vector database migration.",
+    "expected_skill": "executive-memo-architect"
+  },
+  {
+    "id": "eval-05",
+    "input": "Extract clear decisions, assigned action items, and ADR rationale from this messy design meeting transcript.",
+    "expected_skill": "knowledge-capture"
+  },
+  {
+    "id": "eval-06",
+    "input": "Design a resilient REST API endpoint with connection pooling, idempotency keys, and structured error envelopes.",
+    "expected_skill": "backend-architecture"
+  },
+  {
+    "id": "eval-07",
+    "input": "Build a modern, glassmorphic dashboard UI with vibrant HSL colors, dark mode, and smooth micro-animations.",
+    "expected_skill": "frontend-design"
+  },
+  {
+    "id": "eval-08",
+    "input": "Implement streaming agent UI with unclosed markdown repair, collapsible reasoning accordions, and interactive diff drawers.",
+    "expected_skill": "agentic-ui-patterns"
+  },
+  {
+    "id": "eval-09",
+    "input": "Write a minimal reproduction test for this intermittent redis connection pool timeout and verify it asserts RED before fixing.",
+    "expected_skill": "bug-hunter"
+  },
+  {
+    "id": "eval-10",
+    "input": "Perform a senior staff code review on this git diff across correctness, readability, architecture, security, and performance.",
+    "expected_skill": "code-reviewer"
+  },
+  {
+    "id": "eval-11",
+    "input": "Scan this repository for OWASP Top 10 vulnerabilities, command injection risks, and committed credentials or API keys.",
+    "expected_skill": "security-vulnerability-scanner"
+  },
+  {
+    "id": "eval-12",
+    "input": "Red-team this LLM system prompt against indirect injection attacks embedded in scraped HTML and uploaded PDF documents.",
+    "expected_skill": "prompt-injection-red-teamer"
+  },
+  {
+    "id": "eval-13",
+    "input": "Configure runtime AI safety guardrails for PII redaction, topic boundaries, and toxic output filtering.",
+    "expected_skill": "guardrails-enforcer"
+  },
+  {
+    "id": "eval-14",
+    "input": "Profile this messy customer CSV dataset, audit missing values, detect distribution outliers, and produce a data quality report.",
+    "expected_skill": "eda-and-data-cleaning"
+  },
+  {
+    "id": "eval-15",
+    "input": "Build a leakage-safe feature engineering pipeline with cyclical datetime encoding and Empirical Bayes target encoding.",
+    "expected_skill": "feature-engineering-pipeline"
+  },
+  {
+    "id": "eval-16",
+    "input": "Analyze this A/B test experiment data with Mann-Whitney U test, check normality assumptions, and compute Cliff's delta.",
+    "expected_skill": "statistical-hypothesis-tester"
+  },
+  {
+    "id": "eval-17",
+    "input": "Explain predictions of this gradient boosted tree model using SHAP TreeExplainer, waterfall plots, and demographic parity.",
+    "expected_skill": "model-explainability-shap"
+  },
+  {
+    "id": "eval-18",
+    "input": "Design a dbt staging and dimensional mart data transformation pipeline following Kimball star schema modeling.",
+    "expected_skill": "data-pipeline-etl"
+  },
+  {
+    "id": "eval-19",
+    "input": "Size and tune an HNSW Approximate Nearest Neighbor index for 50 million 1536-dimensional vectors with SQ8 quantization.",
+    "expected_skill": "vector-database-architect"
+  },
+  {
+    "id": "eval-20",
+    "input": "Design a Kafka event-driven pipeline with partition keys, idempotent consumer deduplication, and dead-letter retry queues.",
+    "expected_skill": "streaming-and-event-driven"
+  },
+  {
+    "id": "eval-21",
+    "input": "Build a FastMCP server in Python with Pydantic schemas, safe subprocess sandboxing, and timeout handling.",
+    "expected_skill": "mcp-tool-integrator"
+  },
+  {
+    "id": "eval-22",
+    "input": "Author deterministic few-shot prompt templates with XML boundary tags and strict JSON schema output enforcement.",
+    "expected_skill": "prompt-architect"
+  },
+  {
+    "id": "eval-23",
+    "input": "Set up OpenTelemetry distributed tracing across LLM calls, tracking TTFT, token usage, and latency percentiles.",
+    "expected_skill": "llm-observability"
+  },
+  {
+    "id": "eval-24",
+    "input": "Author a multi-stage, rootless, Alpine-based Dockerfile with layer caching optimizations.",
+    "expected_skill": "docker-container-architect"
+  },
+  {
+    "id": "eval-25",
+    "input": "Rewrite this robotic, AI-sounding technical draft into authentic, voice-driven human prose using the 29 anti-patterns.",
+    "expected_skill": "human-writer"
+  }
+]

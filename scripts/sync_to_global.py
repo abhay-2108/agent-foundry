@@ -18,13 +18,19 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 if sys.stderr and hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-WORKSPACE = Path(r"P:\AIML Projects\Skills and Agents")
-GEMINI_DIR = Path(r"C:\Users\Abhay Tiwari\.gemini")
-AGENT_FOUNDRY_GLOBAL = GEMINI_DIR / "agent-foundry"
+# Base paths dynamically resolved with environment variable overrides
+WORKSPACE = Path(os.environ.get("AGENT_FOUNDRY_WORKSPACE", Path(__file__).resolve().parent.parent))
+GEMINI_DIR = Path(os.environ.get("GEMINI_DIR", Path.home() / ".gemini"))
+AGENT_FOUNDRY_GLOBAL = Path(os.environ.get("AGENT_FOUNDRY_GLOBAL", GEMINI_DIR / "agent-foundry"))
 GEMINI_CONFIG = GEMINI_DIR / "config"
 GEMINI_CONFIG_SKILLS = GEMINI_CONFIG / "skills"
-OPENCODE_DIR = Path(r"C:\Users\Abhay Tiwari\.opencode")
-OPENCODE_ROAMING = Path(r"C:\Users\Abhay Tiwari\AppData\Roaming\opencode")
+OPENCODE_DIR = Path(os.environ.get("OPENCODE_DIR", Path.home() / ".opencode"))
+
+if os.name == "nt":
+    default_opencode_roaming = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming")) / "opencode"
+else:
+    default_opencode_roaming = Path.home() / ".config" / "opencode"
+OPENCODE_ROAMING = Path(os.environ.get("OPENCODE_ROAMING", default_opencode_roaming))
 OPENCODE_AGENTS = OPENCODE_ROAMING / "agents"
 OPENCODE_COMMANDS = OPENCODE_ROAMING / "commands"
 
@@ -43,18 +49,23 @@ def run_pre_sync_validations():
     tests = [
         ("Agent Foundry FastMCP Server", [sys.executable, str(WORKSPACE / "mcp_servers" / "agent_foundry_server.py"), "--test"]),
         ("3-Tier Memory Engine & Poisoning Guardrails", [sys.executable, str(WORKSPACE / "memory" / "memory_engine.py"), "--test"]),
-        ("TypeSafe Tools Integration Suite", [sys.executable, str(WORKSPACE / "skills" / "llm-engineering" / "typesafe-ai" / "scripts" / "test_typesafe_tools.py")]),
+        ("Skills & Agents Spec Validator", [sys.executable, str(WORKSPACE / "scripts" / "validate_skills.py")]),
+        ("Routing Accuracy Benchmark (25 Cases)", [sys.executable, str(WORKSPACE / "evals" / "eval_router.py")]),
     ]
     for name, cmd in tests:
         print(f"    -> Verifying {name}...")
-        proc = subprocess.run(
-            cmd,
-            cwd=str(WORKSPACE),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace"
-        )
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=str(WORKSPACE),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=300,
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(f"Pre-sync validation timed out on {name} (>300s). Aborting global sync.")
         if proc.returncode != 0:
             print(f"    [!] FAILED: {name} failed with exit code {proc.returncode}")
             if proc.stdout:
@@ -69,7 +80,7 @@ def sync_agent_foundry_global():
     print("[*] 1. Syncing workspace to global Agent Foundry (~/.gemini/agent-foundry)...")
     AGENT_FOUNDRY_GLOBAL.mkdir(parents=True, exist_ok=True)
     
-    top_dirs = ["agents", "benchmarks", "mcp_servers", "memory", "skills", "workflows"]
+    top_dirs = ["agents", "benchmarks", "mcp_servers", "memory", "references", "skills", "workflows"]
     for d in top_dirs:
         src = WORKSPACE / d
         dst = AGENT_FOUNDRY_GLOBAL / d
@@ -87,11 +98,30 @@ def sync_agent_foundry_global():
             shutil.copy2(src, dst)
             print(f"    [+] Copied {f} -> {dst}")
 
+def sync_shared_references():
+    print("[*] 2. Syncing canonical references/ to global directories (~/.gemini/config/references, etc.)...")
+    ref_src = WORKSPACE / "references"
+    if not ref_src.exists():
+        return
+        
+    targets = [
+        GEMINI_CONFIG / "references",
+        AGENT_FOUNDRY_GLOBAL / "references",
+        OPENCODE_ROAMING / "references",
+        OPENCODE_DIR / "references"
+    ]
+    for dst in targets:
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in ref_src.glob("*.md"):
+            shutil.copy2(f, dst / f.name)
+        print(f"    [+] Mirrored references/ -> {dst}")
+
 def sync_antigravity_config_skills():
-    print("[*] 2. Syncing skills to Antigravity global config (~/.gemini/config/skills)...")
+    print("[*] 3. Syncing skills to Antigravity global config (~/.gemini/config/skills)...")
     GEMINI_CONFIG_SKILLS.mkdir(parents=True, exist_ok=True)
     
     # Locate all SKILL.md files under WORKSPACE/skills
+    ref_src = WORKSPACE / "references"
     skill_count = 0
     for skill_file in (WORKSPACE / "skills").rglob("SKILL.md"):
         skill_dir = skill_file.parent
@@ -102,9 +132,19 @@ def sync_antigravity_config_skills():
         if target_dir.exists():
             shutil.rmtree(target_dir)
         shutil.copytree(skill_dir, target_dir, ignore=IGNORE_PATTERNS)
+
+        # Self-contained portability guarantee (resolving Issue #361):
+        # Bundle references/ directly inside each deployed skill folder so relative links
+        # (e.g. references/done.md or ../../references/done.md) never break in isolation.
+        if ref_src.exists():
+            skill_ref_dir = target_dir / "references"
+            if skill_ref_dir.exists():
+                shutil.rmtree(skill_ref_dir)
+            shutil.copytree(ref_src, skill_ref_dir, ignore=IGNORE_PATTERNS)
+
         skill_count += 1
         
-    print(f"    [+] Deployed {skill_count} flat skills to {GEMINI_CONFIG_SKILLS}")
+    print(f"    [+] Deployed {skill_count} flat skills (with bundled references) to {GEMINI_CONFIG_SKILLS}")
 
 def update_skills_json():
     print("[*] 3. Updating Antigravity ~/.gemini/config/skills.json...")
@@ -136,7 +176,11 @@ def update_skills_json():
 
 def update_global_guidance_md():
     print("[*] 4. Updating ~/.gemini/config/AGENTS.md & GEMINI.md...")
-    content = """# Agent Foundry Global System Instructions & Capabilities
+    memory_db_path = "~/.gemini/agent_foundry_memory.db"
+    wf_engine_path = "~/.gemini/agent-foundry/workflows/workflow_engine.py"
+    wf_sample_path = "~/.gemini/agent-foundry/workflows/<name>/workflow.json"
+
+    content = f"""# Agent Foundry Global System Instructions & Capabilities
 
 You have direct access to the **Agent Foundry Ecosystem** installed globally on this machine.
 Whenever you are chatting in any project or workspace, you have access to these capabilities:
@@ -161,11 +205,11 @@ You can embody or consult any of the 10 specialist personas on demand. When the 
 
 ## 2. Forty-One Globally Available Skills across 9 Domains
 All 41 skills are indexed globally under `~/.gemini/config/skills/`. Antigravity's progressive disclosure dynamically injects their runbooks when relevant:
-- **Orchestration (6)**: `multi-agent-orchestrator`, `plan-and-execute`, `human-in-the-loop-governor`, `session-handoff`, `agent-trajectory-evaluator`, `get-shit-done`
+- **Orchestration (7)**: `using-agent-skills`, `multi-agent-orchestrator`, `plan-and-execute`, `human-in-the-loop-governor`, `session-handoff`, `agent-trajectory-evaluator`, `get-shit-done`
 - **Software Engineering & Quality (6)**: `code-reviewer`, `bug-hunter`, `backend-architecture`, `frontend-design`, `docker-container-architect`, `git-plumbing-and-automation`
 - **Data Analysis & Modeling (4)**: `advanced-data-analyst`, `ml-feature-and-model-lab`, `eda-and-data-cleaning`, `model-explainability-shap`
 - **Database & Data Engineering (3)**: `data-pipeline-etl`, `vector-database-architect`, `streaming-and-event-driven`
-- **LLM Engineering & Evals (5)**: `llm-council`, `llm-evals-engineer`, `llm-observability`, `prompt-architect`, `typesafe-ai`
+- **LLM Engineering & Evals (4)**: `llm-council`, `llm-evals-engineer`, `llm-observability`, `prompt-architect`
 - **RAG & Knowledge (3)**: `agentic-rag-engineer`, `graph-rag-builder`, `mcp-tool-integrator`
 - **AI Security & Safety (3)**: `security-vulnerability-scanner`, `prompt-injection-red-teamer`, `guardrails-enforcer`
 - **AI Product & UX (2)**: `agentic-ui-patterns`, `executive-memo-architect`
@@ -176,7 +220,7 @@ All 41 skills are indexed globally under `~/.gemini/config/skills/`. Antigravity
 
 ## 3. Persistent 3-Tier Memory Engine
 Memories persist globally across all workspaces and sessions in SQLite at:
-`C:\\Users\\Abhay Tiwari\\.gemini\\agent_foundry_memory.db`
+`{memory_db_path}`
 
 - **Tier 1 (Working Memory)**: Use `memory_add_working_note` and `memory_get_working_scratchpad` for active session milestones.
 - **Tier 2 (Episodic Memory)**: Use `memory_log_episode` and `memory_get_recent_episodes` to track completed steps.
@@ -187,7 +231,7 @@ Memories persist globally across all workspaces and sessions in SQLite at:
 
 ## 4. Five Multi-Agent Workflows
 Execute declarative multi-agent workflows using the MCP tool `workflow_execute` or via the CLI:
-`python "C:/Users/Abhay Tiwari/.gemini/agent-foundry/workflows/workflow_engine.py" --run "C:/Users/Abhay Tiwari/.gemini/agent-foundry/workflows/<name>/workflow.json"`
+`python "{wf_engine_path}" --run "{wf_sample_path}"`
 
 - `deep-research`: Multi-stage codebase exploration and technical specification generation.
 - `feature-factory`: End-to-end specification, implementation, and code-quality audit.
@@ -203,15 +247,63 @@ The `"agent-foundry"` MCP server is registered globally in `mcp_config.json` and
 - `run_shell`: Safe shell command execution.
 - `read_file_safe`, `write_file_safe`, `list_directory_safe`: Workspace-bounded filesystem tools.
 - `hybrid_search`, `index_documents`: BM25 + Vector ranking tools.
-- `memory_record_fact`, `memory_query_facts`, `memory_log_episode`: Cross-project SQLite memory tools with TypeSafe anti-poisoning guardrails.
-- `workflow_list`, `workflow_execute`: Declarative multi-agent DAG runner with Jev acceptance criteria verification.
-- `typesafe_route_task`: Speculative task routing to specialist personas and skills.
-- `typesafe_verify_claim`: Double-check factual claims against source context.
-- `typesafe_evaluate_risk`: Assess command blast radius and security risk severity.
+- `memory_record_fact`, `memory_query_facts`, `memory_log_episode`: Cross-project SQLite memory tools with offline anti-poisoning guardrails.
+- `workflow_list`, `workflow_execute`: Declarative multi-agent DAG runner with offline acceptance criteria verification.
+- `evaluate_risk`: Assess command blast radius and security risk severity.
 """
     (GEMINI_CONFIG / "AGENTS.md").write_text(content, encoding="utf-8")
     (GEMINI_CONFIG / "GEMINI.md").write_text(content, encoding="utf-8")
+
+    # Also update plugin rules if present
+    plugin_rule = GEMINI_CONFIG / "plugins" / "agent-foundry" / "rules" / "agent_foundry.md"
+    if plugin_rule.parent.exists():
+        plugin_rule.write_text(content, encoding="utf-8")
+        print("    [+] Updated agent_foundry.md in ~/.gemini/config/plugins/agent-foundry/rules")
+
     print("    [+] Updated AGENTS.md and GEMINI.md in ~/.gemini/config")
+
+def update_mcp_config():
+    print("[*] 5. Updating Antigravity mcp_config.json...")
+    mcp_config_path = GEMINI_CONFIG / "mcp_config.json"
+    if mcp_config_path.exists():
+        try:
+            data = json.loads(mcp_config_path.read_text(encoding="utf-8"))
+            servers = data.setdefault("mcpServers", {})
+            servers["agent-foundry"] = {
+                "command": sys.executable,
+                "args": [
+                    str(AGENT_FOUNDRY_GLOBAL / "mcp_servers" / "agent_foundry_server.py")
+                ],
+                "env": {
+                    "PYTHONPATH": str(AGENT_FOUNDRY_GLOBAL),
+                    "AGENT_FOUNDRY_GLOBAL_DB": str(GEMINI_DIR / "agent_foundry_memory.db")
+                },
+                "disabled": servers.get("agent-foundry", {}).get("disabled", False)
+            }
+            mcp_config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            print(f"    [+] Updated {mcp_config_path} with dynamic agent-foundry configuration.")
+        except Exception as e:
+            print(f"    [!] Warning: Failed to update {mcp_config_path}: {e}")
+
+    plugin_mcp_config = GEMINI_CONFIG / "plugins" / "agent-foundry" / "mcp_config.json"
+    if plugin_mcp_config.exists():
+        try:
+            plugin_data = json.loads(plugin_mcp_config.read_text(encoding="utf-8-sig"))
+            p_servers = plugin_data.setdefault("mcpServers", {})
+            p_servers["agent-foundry"] = {
+                "command": sys.executable,
+                "args": [
+                    str(WORKSPACE / "mcp_servers" / "agent_foundry_server.py")
+                ],
+                "env": {
+                    "PYTHONPATH": str(WORKSPACE),
+                    "AGENT_FOUNDRY_GLOBAL_DB": str(GEMINI_DIR / "agent_foundry_memory.db")
+                }
+            }
+            plugin_mcp_config.write_text(json.dumps(plugin_data, indent=2), encoding="utf-8")
+            print(f"    [+] Updated {plugin_mcp_config} with dynamic agent-foundry configuration.")
+        except Exception as e:
+            print(f"    [!] Warning: Failed to update {plugin_mcp_config}: {e}")
 
 def sync_opencode_agents():
     print("[*] 5. Syncing enriched agent specs to OpenCode (~/AppData/Roaming/opencode/agents)...")
@@ -300,7 +392,7 @@ def sync_opencode_commands():
         "workspace-researcher": ("research", "Multi-source web and codebase intelligence gathering"),
         "get-shit-done": ("gsd", "Structured 3-tier work breakdown into milestones and vertical slices"),
         "human-writer": ("human-writer", "Convert AI-generated text into authentic, natural prose using 29 anti-patterns"),
-        "typesafe-ai": ("typesafe", "TypeSafe System One judgments, speculative routing, citation verification, and risk evaluation")
+        "using-agent-skills": ("using-skills", "Central lifecycle decision tree, 6 operating rules, and skill router")
     }
     
     count = 0
@@ -334,9 +426,11 @@ def main():
         return
 
     sync_agent_foundry_global()
+    sync_shared_references()
     sync_antigravity_config_skills()
     update_skills_json()
     update_global_guidance_md()
+    update_mcp_config()
     sync_opencode_agents()
     sync_opencode_commands()
     print("=======================================================")

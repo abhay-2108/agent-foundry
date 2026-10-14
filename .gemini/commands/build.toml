@@ -1,0 +1,2 @@
+description = "Incrementally implement approved vertical slices within <=100 line diff budgets."
+prompt = "Use the fullstack-engineer workflow to: $ARGUMENTS"

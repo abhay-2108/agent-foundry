@@ -1,20 +1,24 @@
 ---
 name: office-doc-engine
-description: >-
-  Use this skill to create, edit, parse, or convert Microsoft Word (.docx), Excel (.xlsx),
-  PowerPoint (.pptx), and PDF documents programmatically without requiring desktop office applications.
-  Applies corporate styling, formula calculations, tables, charts, and slide layouts.
+description: Use this skill when programmatically creating, editing, parsing, or converting
+  Word (.docx), Excel (.xlsx), PowerPoint (.pptx), and PDF documents.
 ---
 
 # Office Document Engine
 
-Enables agents to produce, inspect, and update production-grade business documents, spreadsheets, presentations, and PDF briefs directly from code.
+## Overview
 
-## When to Use This Skill
+Programmatically creates, edits, parses, and converts Microsoft Word (.docx), Excel (.xlsx), PowerPoint (.pptx), and PDF documents using Python libraries (python-docx, openpyxl, python-pptx, PyPDF2) without requiring desktop Office installations.
+
+## When to Use
+
 - When asked to generate reports, executive summaries, or memos as `.docx` or `.pdf`.
 - When manipulating datasets into styled spreadsheets (`.xlsx`) with formulas, conditional formatting, and charts.
 - When assembling pitch decks, architecture presentations, or training slides as `.pptx`.
 - When extracting text, tables, or metadata from locked PDF files.
+- **When NOT to use**: Authoring markdown documentation for code repositories (use `technical-writer-scribe` or `workspace-researcher`).
+
+## Core Process & Document Generation Workflows
 
 ## Core Tooling & Libraries
 
@@ -94,16 +98,26 @@ wb.save("output/Financial_Model.xlsx")
 - **Always adhere to 16:9 aspect ratio** for modern presentations.
 - **PDF Generation**: Prefer rendering cleanly styled HTML/CSS to PDF via headless browser or `weasyprint` for pixel-perfect typography.
 
-## Anti-Patterns & Traps to Avoid
-- **Unstyled Raw Tables & Default Borders**: Generating spreadsheets or tables with raw unformatted gridlines, unstyled headers, and default column widths that clip text values.
-- **Hardcoding Calculated Totals in Spreadsheets**: Writing raw sum or average numbers into cells instead of dynamic Excel formulas (`=SUM(C2:C100)`), breaking re-calculation when data is edited.
-- **In-Memory Buffer Exhaustion with Giant Datasets**: Using standard openpyxl DOM parsing on multi-hundred-megabyte spreadsheets instead of `write_only=True` streaming mode, causing fatal OOM errors.
-- **Hardcoded Operating System Specific Paths**: Using hardcoded Windows backslashes (`C:\temp\`) or Unix `/tmp` instead of `pathlib.Path` or `tempfile.NamedTemporaryFile`, breaking document generation across environments.
+## Common Rationalizations
 
-## Quality Checklist
-- [ ] Tables feature styled header rows with high-contrast fill colors and bold typography.
-- [ ] Column widths are auto-calculated with padding to prevent cell truncation or `###` overflow.
-- [ ] Computed values utilize native spreadsheet formulas (`SUM`, `AVERAGE`, `VLOOKUP`) rather than static numbers.
-- [ ] Presentation slides conform to 16:9 widescreen layout with consistent typography and color palettes.
-- [ ] Large workbook exports utilize streaming / write-only modes when data exceeds 10,000 rows.
-- [ ] Document generation scripts execute cleanly without deprecation warnings or dangling file descriptors.
+| Rationalization | Reality |
+|---|---|
+| *"We can use hardcoded cell coordinates instead of dynamic formula ranges."* | Hardcoded cell ranges break when new rows or categories are inserted; named ranges or dynamic formula offsets are essential. |
+| *"CSV is fine; the user can format it into Excel themselves."* | Users expect styled workbooks with freeze panes, currency formatting, auto-filtered headers, and pre-calculated formulas. |
+| *"PowerPoint text boxes don't need explicit coordinate bounding boxes."* | Unconstrained shapes overlap across slides and render illegibly on different screen aspect ratios. |
+| *"Extracting PDF text with simple regex is always reliable."* | PDFs have complex multi-column layouts, font encodings, and table boundaries that require layout-aware parsers. |
+
+## Red Flags
+
+- Generating spreadsheets with raw numbers where dynamic formulas (`SUM`, `AVERAGE`, `VLOOKUP`) should be used.
+- Unstyled raw white Word documents lacking standardized corporate typography, headers, and margins.
+- Hardcoding Windows drive paths (`C:\temp\`) instead of cross-platform temporary directories.
+- Failing to close file handles before attempting file move or conversion operations.
+
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Generated spreadsheets include styled headers, formatted numbers (currency, percentages), and verified formulas.
+- [ ] Word documents use semantic paragraph styles (Heading 1, Heading 2, Body) and proper page breaks.
+- [ ] Presentations conform to 16:9 widescreen dimensions with non-overlapping visual hierarchy.
+- [ ] Document generation runs headless in Linux/Windows CI/CD pipelines without MS Office dependencies.

@@ -41,12 +41,13 @@ class SafeFilesystem:
         if not p.is_file():
             raise IsADirectoryError(f"Path '{path}' is a directory, not a file.")
 
-        content = p.read_text(encoding="utf-8", errors="replace")
-        truncated = len(content.encode("utf-8")) > max_bytes
+        raw = p.read_bytes()
+        truncated = len(raw) > max_bytes
+        content = raw[:max_bytes].decode("utf-8", errors="replace")
         return {
             "path": str(p),
-            "size_bytes": p.stat().st_size,
-            "content": content[:max_bytes],
+            "size_bytes": len(raw),
+            "content": content,
             "truncated": truncated
         }
 

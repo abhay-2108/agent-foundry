@@ -1,0 +1,4 @@
+# Agent Foundry runtime dependencies (stdlib-first)
+# Core MCP server requires:
+mcp>=1.0.0
+pyyaml>=6.0

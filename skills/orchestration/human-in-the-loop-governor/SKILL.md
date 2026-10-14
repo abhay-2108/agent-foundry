@@ -8,9 +8,12 @@ description: >-
 
 # Human-in-the-Loop (HITL) Governor & Policy Gate
 
-Ensures enterprise safety, regulatory compliance, and operational control by intercepting high-risk agent operations and enforcing explicit human approvals, state checkpoints, and immutable audit logs.
+## Overview
 
-## When to Use This Skill
+Enforces human-in-the-loop (HITL) approval gates, pause-and-resume execution flows, and audit controls for autonomous agents. Guards high-risk actions (production deploys, payments, irreversible data deletion) against uncontrolled execution.
+
+## When to Use
+
 - When an agent is about to execute a destructive or irreversible action:
   - Database mutations (`DROP`, `DELETE`, migration scripts).
   - Financial operations (initiating payments, modifying billing tiers).
@@ -20,6 +23,9 @@ Ensures enterprise safety, regulatory compliance, and operational control by int
 - Trigger phrases: `"human in the loop"`, `"approval gate"`, `"require user confirmation"`, `"safe execution policy"`, `"checkpoint agent"`.
 
 ---
+- **When NOT to use**: Read-only research queries or purely local scratch file generation.
+
+## Core Process & HITL Governance Architecture
 
 ## Execution Lifecycle & Risk Classification
 
@@ -115,20 +121,26 @@ Record every human decision with metadata:
 - Timestamp, user identity, action hash, and agent rationale.
 - Never proceed if the human response is ambiguous; require explicit confirmation.
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Silent Partial Execution**: Executing preliminary mutations (e.g., dropping an index or allocating cloud spend) *before* requesting approval for the overall operation. If the human rejects, the environment is left in a dirty, inconsistent state. High-risk operations must be all-or-nothing transactions.
-2. **Ambiguous Affirmation Parsing**: Interpreting ambiguous conversational feedback (e.g., "Sounds plausible", "Go on", "Looks okay") as legally binding authorization for Tier 3 production actions. Require explicit confirmation tokens or exact keywords (`APPROVE` / `CONFIRM`).
-3. **Approval Fatigue Triggering**: Subjecting operators to approval popups for harmless Tier 1 read operations. Excessive friction causes human operators to blindly rubber-stamp alerts, defeating the purpose of governance.
-4. **Indefinite Lock Holding During Pauses**: Halting at a breakpoint while holding open database transactions, row-level locks, or unreleased mutexes. State must be serialized to an external checkpointer and connection pools released before entering the waiting state.
+| Rationalization | Reality |
+|---|---|
+| *"The agent asked for permission once at the beginning, so it can run all sub-tasks autonomously."* | Initial intent approval is not approval for dangerous intermediate sub-actions (e.g. dropping a table or spending money). |
+| *"Asking for human approval slows down the agent's workflow."* | A 10-second human confirmation prevents catastrophic irreversible database drops, accidental git force-pushes, and financial loss. |
+| *"We can use an automated LLM judge instead of a human for approval."* | LLM judges share identical failure modes and prompt injection vulnerabilities as the agent; true governance requires human judgment. |
+| *"Read-only tools never need approval gates."* | Tools that read sensitive credentials or export private customer data require approval gates to prevent data exfiltration. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Agent executing shell commands with `rm -rf`, `DROP TABLE`, or `git push --force` without an explicit approval prompt.
+- Approval requests that show vague summaries without displaying the exact diff or command to be run.
+- Bypassing policy gates when an API call times out or throws an error.
+- Executing financial transactions or external email dispatch without user confirmation.
 
-- [ ] Tier 3 tools strictly require an explicit confirmation token and cannot execute autonomously.
-- [ ] State snapshot is fully persisted to a reliable checkpointer (e.g. SQLite/Redis) before pausing.
-- [ ] Database locks, open transactions, and network connections are released during the pause state.
-- [ ] The approval envelope clearly displays: (1) Operation, (2) Blast radius, and (3) Reversible diff.
-- [ ] Human rejections trigger an automated rollback and clean up temporary staging artifacts.
-- [ ] Every approval and rejection is recorded in an immutable audit log with user identity and timestamp.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] All tools and actions are classified into risk tiers (READ_ONLY, LOW, MEDIUM, HIGH, CRITICAL).
+- [ ] High-risk and critical actions pause execution and prompt the user with exact diffs and commands.
+- [ ] Audit log records who approved the action, the timestamp, and the exact payload approved.
+- [ ] Policy engine prevents execution if the human denies or modifies the requested action.

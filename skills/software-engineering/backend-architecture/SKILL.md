@@ -8,14 +8,20 @@ description: >-
 
 # Backend Architecture & Systems Engineering
 
-A comprehensive backend engineering skill guiding the design, implementation, and optimization of robust, scalable, and secure server-side applications, APIs, and data layers.
+## Overview
 
-## When to Use This Skill
+Enforces production-grade backend API contract design, resilient database schema patterns, connection pooling, and structured error envelopes. Guides agents through designing scalable REST and gRPC endpoints with idempotency and transaction safety.
+
+## When to Use
+
 - When building or refactoring REST, GraphQL, or gRPC API services.
 - When designing relational (PostgreSQL, MySQL, SQLite) or document (MongoDB) database schemas.
 - When implementing authentication, role-based authorization (RBAC), and session management.
 - When structuring background task workers, event queues (Redis, BullMQ, Celery), or pub/sub systems.
 - Trigger phrases: `"build backend"`, `"design API"`, `"database schema"`, `"backend architecture"`, `"optimize query"`.
+- **When NOT to use**: Frontend UI component styling (use `frontend-design`) or data warehouse ETL batch jobs (use `data-pipeline-etl`).
+
+## Core Process & Systems Engineering Blueprint
 
 ## Core Backend Tenets
 
@@ -184,20 +190,27 @@ X-RateLimit-Remaining: 994
 X-RateLimit-Reset: 1726066800
 ```
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **The N+1 Query Disaster**: Iterating over an array of entities and issuing an individual `SELECT` query per row inside the loop. This converts a single operation into hundreds of database round-trips. Always use SQL joins, batch queries (`WHERE id IN (...)`), or DataLoader patterns.
-2. **Bleeding Business Logic into Controllers**: Writing database queries, external API calls, and financial calculations directly inside route controller functions. Always enforce layered architecture: Controllers handle HTTP serialization, Services orchestrate business logic, and Repositories handle data access.
-3. **Non-Transactional Multi-Write Operations**: Executing dependent mutations (e.g., deducting an inventory count and creating an invoice) across multiple independent queries without an explicit ACID transaction block. If step 2 fails, the database is permanently corrupted.
-4. **Unbounded Connection Pools & Missing Query Timeouts**: Allowing queries to run indefinitely without a statement timeout. A single unindexed query under high traffic can lock table rows, saturate database connections, and bring down all microservices.
+| Rationalization | Reality |
+|---|---|
+| *"We don't need an error envelope; raw 500 string is fine for now."* | Unstructured errors break frontend exception parsers and leak internal stack traces to users. |
+| *"Adding indexes can wait until performance drops in production."* | Missing foreign key and filter indexes cause full table locks and catastrophic latency spikes under moderate load. |
+| *"I'll skip transactions since this only writes to two tables."* | Partial failures leave the database in an inconsistent state that requires manual operator remediation. |
+| *"Soft deletes aren't necessary; `DELETE` is simpler."* | Hard deletes destroy audit trails and break foreign key integrity across historical transactions. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Endpoints returning unbounded lists without cursor-based or limit-offset pagination.
+- Business logic or SQL queries executed directly inside HTTP controller functions.
+- Catch-all `except Exception: pass` suppressing database transaction rollbacks.
+- Database credentials or connection strings hardcoded in source files instead of injected from environment variables.
 
-- [ ] Route controllers strictly handle HTTP request validation and status response formatting.
-- [ ] Business logic is decoupled into testable Service layers with typed dependency injection.
-- [ ] Multi-table mutations are wrapped in atomic database transactions with rollback guarantees.
-- [ ] Database queries are audited with `EXPLAIN ANALYZE` to eliminate sequential table scans.
-- [ ] Sensitive secrets and credentials are read exclusively from environment variables.
-- [ ] Structured logging emits standardized correlation IDs and excludes raw credentials or PII.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Endpoints validate request payloads against strict type schemas.
+- [ ] All database queries in new endpoints have supporting indexes.
+- [ ] Multi-table mutations are wrapped in database transactions with rollback tests.
+- [ ] Error responses conform to the standard error envelope with HTTP status codes matching semantics (400, 401, 403, 404, 409, 422).
+- [ ] Integration tests verify both happy-path responses and fault-tolerance edge cases.

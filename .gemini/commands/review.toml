@@ -1,0 +1,2 @@
+description = "5-Axis code review against correctness, readability, architecture, security, and perf."
+prompt = "Use the code-reviewer workflow to: $ARGUMENTS"

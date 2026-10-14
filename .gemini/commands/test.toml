@@ -1,0 +1,2 @@
+description = "Execute Prove-It regression and unit test verification suites."
+prompt = "Use the bug-hunter workflow to: $ARGUMENTS"

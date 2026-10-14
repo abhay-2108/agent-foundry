@@ -9,11 +9,11 @@ description: >-
 
 # Data Pipeline Engineering & Modern ETL/ELT Architectures
 
-Acts as a Lead Data & Analytics Engineer. Designs, authors, and optimizes end-to-end data pipelines using modern orchestration engines (Apache Airflow, Dagster, Prefect) and transform-in-place tools (dbt, DuckDB, Snowflake, BigQuery). Enforces Kimball dimensional modeling, writes robust incremental materializations, automates data quality assertion gates, and ensures 100% idempotent pipeline execution.
+## Overview
 
----
+Designs, builds, and orchestrates production ETL/ELT pipelines using Airflow, Dagster, and dbt. Enforces dimensional Kimball star schema modeling (staging, intermediate, marts), idempotent incremental backfills, and automated data quality assertions.
 
-## When to Use This Skill
+## When to Use
 
 - When designing or writing data orchestration workflows (Airflow DAGs, Dagster software-defined assets, Prefect flows).
 - When creating or refactoring dbt projects (`stg_`, `int_`, `fct_`, `dim_` models).
@@ -23,6 +23,9 @@ Acts as a Lead Data & Analytics Engineer. Designs, authors, and optimizes end-to
 - Trigger phrases: `"create dbt model"`, `"author airflow dag"`, `"build ETL pipeline"`, `"data transformation job"`, `"orchestrate data pipeline"`, `"data quality tests"`, `"lineage tracking"`, `"prefect flow"`, `"dagster asset"`.
 
 ---
+- **When NOT to use**: Low-latency real-time stream processing with Kafka/Flink (use `streaming-and-event-driven`), or one-off exploratory data analysis (use `eda-and-data-cleaning`).
+
+## Core Process & Dimensional Modeling Workflow
 
 ## The Modern Data Pipeline Lifecycle
 
@@ -182,28 +185,26 @@ FROM {{ ref('fct_orders') }}
 WHERE net_revenue_usd < 0
 ```
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Hard Guardrails
+| Rationalization | Reality |
+|---|---|
+| *"Writing dbt tests slows down pipeline development."* | Untested pipelines corrupt downstream analytics dashboards and executive KPIs silently until months later. |
+| *"Full refreshes every night are simpler than incremental models."* | Full table scans fail as data scales, causing compute cost explosions and violating SLA delivery windows. |
+| *"Staging models that simply do `SELECT *` are redundant."* | Staging models enforce column renaming, type casting, and schema normalization at the ingestion boundary, isolating marts from source changes. |
+| *"We don't need idempotency because the cron job runs only once a day."* | Network drops and timeouts cause task retries; non-idempotent pipelines produce catastrophic duplicate records. |
 
-- 🚫 **Never run heavy compute on the orchestrator**: Airflow workers should only orchestrate, never parse millions of rows in memory. Push compute to Snowflake, BigQuery, ClickHouse, or DuckDB.
-- 🚫 **Never omit a lookback buffer in incremental models**: Relying strictly on `updated_at > MAX(updated_at)` causes silent data loss from network retries and delayed CDC ingestion.
-- 🚫 **Never reference raw tables directly in downstream marts**: All raw tables must pass through a staging model (`{{ ref('stg_...') }}`) to encapsulate schema changes.
-- 🚫 **Never write non-idempotent insert jobs**: Direct `INSERT INTO` without unique key deduplication or partition overwriting leads to corrupted duplicate tables on task retry.
+## Red Flags
 
----
+- Directly querying raw source tables inside reporting marts without staging layers.
+- Pipelines lacking `unique` and `not_null` schema test assertions on primary and surrogate keys.
+- Incremental models lacking explicit partition filters or using non-deterministic timestamp windows.
+- Storing raw unhashed PII inside public analytics reporting tables.
 
-## Verification & CLI Tooling
+## Verification
 
-Use the companion script [`data_pipeline_toolkit.py`](./scripts/data_pipeline_toolkit.py) to audit DAG dependencies, detect circular references, lint dbt models, and test incremental merge logic.
-
-```bash
-# Run self-test suite
-python skills/database-and-data-engineering/data-pipeline-etl/scripts/data_pipeline_toolkit.py --test
-
-# Lint a dbt model SQL file
-python skills/database-and-data-engineering/data-pipeline-etl/scripts/data_pipeline_toolkit.py lint --file models/fct_orders.sql
-
-# Test DAG topological dependency sort
-python skills/database-and-data-engineering/data-pipeline-etl/scripts/data_pipeline_toolkit.py dag-sort --tasks ingest,stg,int,marts,test --deps "stg:ingest,int:stg,marts:int,test:marts"
-```
+After completing the workflow, confirm:
+- [ ] Staging, intermediate, and dimensional mart models follow Kimball star schema standards.
+- [ ] All models compile and pass `dbt test` or Great Expectations schema assertions.
+- [ ] Incremental models demonstrate idempotency across multiple backfill runs without duplicating rows.
+- [ ] Pipeline DAG runs successfully via CLI verification: `python skills/database-and-data-engineering/data-pipeline-etl/scripts/data_pipeline_toolkit.py --test`.

@@ -8,11 +8,11 @@ description: >-
 
 # Plan and Execute: Engineering Methodology
 
-A foundational productivity and engineering skill that eliminates rabbit holes, hallucinations, regressions, and destructive edits by enforcing pre-flight architectural risk analysis, bite-sized task decomposition, and progressive verification.
+## Overview
 
----
+Decomposes complex, ambiguous, or multi-step engineering initiatives into structured Directed Acyclic Graph (DAG) plans. Enforces bite-sized tasks (2–5 minutes), architectural risk analysis, rollback checkpoints, and human alignment before modifying files.
 
-## When to Use This Skill
+## When to Use
 
 - When a user request involves non-trivial changes spanning multiple files, packages, or architectural layers.
 - When requirements are ambiguous, open-ended, or subject to multiple architectural trade-offs.
@@ -21,13 +21,35 @@ A foundational productivity and engineering skill that eliminates rabbit holes, 
 - Trigger phrases: `"plan this out"`, `"architect solution"`, `"create implementation plan"`, `"plan and execute"`, `"design roadmap"`.
 
 ---
+- **When NOT to use**: Single-line typo fixes or trivial one-file updates that require no multi-step orchestration.
 
-## The 4 Golden Principles of Execution
+## Core Process & Engineering Planning Methodology
 
-1. **No Code Before Plan**: Never create or modify source files without an explicit, approved technical breakdown.
-2. **Bite-Sized Atomic Tasks**: Deconstruct work into small, independently verifiable tasks (2–5 minutes of work each).
-3. **Explicit Paths & Acceptance Gates**: Every task must cite exact file paths and a concrete, runnable verification command.
-4. **Pre-Mortem Risk & Rollback Points**: Identify the highest-blast-radius actions and define safe rollback milestones before editing.
+## The 5 Golden Principles of Execution
+
+1. **No Code Before Spec & Plan**: Never create or modify source files without an explicit, approved technical breakdown.
+2. **Gated STOP-After-Spec**: After producing the specification and implementation plan, the agent **MUST STOP AND HALT**. Never begin writing code until the user provides explicit approval.
+3. **The ~100-Line Diff Budget**: Every task slice must stay within a strict $\le 100\text{--}150$ line change limit. Massive diffs hide bugs and evade review. If a change exceeds 150 lines, split it into vertical sub-slices.
+4. **Bite-Sized Atomic Tasks**: Deconstruct work into small, independently verifiable tasks (2–5 minutes of work each).
+5. **Explicit Paths & Acceptance Gates**: Every task must cite exact file paths and a concrete, runnable verification command meeting [references/done.md](../../../references/done.md) standards.
+
+---
+
+## The Gated Lifecycle Pipeline
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Stage 1: SPECIFY  │ Define requirements, schemas, boundary constraints │
+├───────────────────┼────────────────────────────────────────────────────┤
+│ Stage 2: PLAN     │ Architecture, trade-offs, rollback checkpoints     │
+├───────────────────┼────────────────────────────────────────────────────┤
+│   🛑 HARD GATE    │ STOP-AFTER-SPEC: Await explicit user approval      │
+├───────────────────┼────────────────────────────────────────────────────┤
+│ Stage 3: TASKS    │ Decompose into micro-slices (<= 100-150 lines)     │
+├───────────────────┼────────────────────────────────────────────────────┤
+│ Stage 4: IMPLEMENT│ Execute task -> Verify (RED/GREEN) -> Commit       │
+└───────────────────┴────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -50,103 +72,51 @@ Draft a structured plan (e.g., `implementation_plan.md`) following this structur
 ## Architectural Trade-Offs & Decision Log (ADR)
 - Alternative A vs Alternative B (Rationale for selection)
 
-## Step-by-Step Task Breakdown
-- [ ] Task 1: [Target File] - Add data model / schema. 
+## Step-by-Step Task Breakdown (Max 100-150 lines per slice)
+- [ ] Task 1: [Target File] - Add data model / schema (Diff budget: ~50 lines). 
       Verification: Run `pytest tests/test_schema.py`.
-- [ ] Task 2: [Target File] - Implement core service method. 
+- [ ] Task 2: [Target File] - Implement core service method (Diff budget: ~80 lines). 
       Verification: Run `pytest tests/test_service.py -k test_happy_path`.
-- [ ] Task 3: [Target File] - Wire route controller and validation middleware. 
+- [ ] Task 3: [Target File] - Wire route controller and validation middleware (Diff budget: ~60 lines). 
       Verification: Run curl test script against local test server.
 
 ## Rollback & Failure Recovery Plan
 - If Task 2 fails integration: Revert with `git checkout -- <file>` and report root cause.
 ```
 
-### Step 3: Seek User Alignment
+### Step 3: Mandatory STOP-After-Spec Gate
 - Present the plan directly to the user. Highlight open design questions, breaking changes, or trade-offs.
-- **Stop and wait** for explicit user approval before touching project code.
+- **STOP EXECUTION IMMEDIATELY**. Do not edit project code files or create implementation drafts. Wait for explicit user confirmation.
 
 ### Step 4: Progressive Stepwise Execution & Verification
 - Execute strictly one task at a time.
-- After completing each task, run its designated verification command immediately.
+- Verify diff budget: run `git diff --stat` to ensure changes stay $\le 100\text{--}150$ lines.
+- Run designated verification commands immediately. Refer to [references/testing.md](../../../references/testing.md) for the Prove-It pattern.
 - Never bundle multiple unverified edits together. If a test fails, fix it before moving to the next item.
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"We should start coding immediately; we can plan as we go."* | Coding without an upfront DAG plan leads to architecturally tangled code, half-implemented features, and wasted engineering hours. |
+| *"I can start implementing Task 1 right away after writing the plan."* | Violates the STOP-after-spec gate. The user must review trade-offs and approve scope before any file modifications begin. |
+| *"A 400-line diff is fine because all the code is closely related."* | Diffs over 150 lines receive superficial review and have exponential bug density. Split into vertical slices. |
+| *"A 10-step plan doesn't need rollback checkpoints."* | If step 8 breaks the build, absence of rollback checkpoints forces frantic, error-prone manual git surgery. |
+| *"Each task in the plan can be 'Implement the whole backend'."* | Oversized tasks cause context drift and hide progress; tasks must be bite-sized (2-5 minutes) with discrete exit criteria. |
 
-1. **The "Big Bang" Edit**: Modifying 8 different files across frontend, backend, and database simultaneously before running a single compiler or test check. When things break, root-cause isolation is impossible.
-2. **Plan-Reality Drift (Sunk Cost Fallacy)**: Continuing to execute an approved plan when discovered runtime facts contradict the original assumptions. Always halt, update the plan, and realign with the user.
-3. **Stealth Scope Creep**: Silently refactoring unrelated functions, renaming existing variables, or fixing peripheral lints outside the agreed scope. Keep PRs and commits atomic.
-4. **Vague, Non-Verifiable Tasks**: Writing plan tasks like *"Improve error handling"* or *"Clean up backend logic"*. Every task must specify: (1) Exact file, (2) exact modification, and (3) runnable pass/fail verification test.
+## Red Flags
 
----
+- Modifying code files before presenting the plan and receiving explicit user approval (breaking STOP-after-spec).
+- Task diffs exceeding 150 lines without splitting into sub-slices.
+- Plans lacking explicit rollback strategies or git branch checkpoints.
+- Tasks described vaguely ('update files') without specifying target files, diff budgets, and expected outputs.
+- Proceeding through subsequent plan tasks while earlier task tests are failing.
 
-## Quality Checklist
+## Verification
 
-- [ ] Baseline test suite passes *before* making any source code modifications.
-- [ ] Tasks are decomposed into atomic, independent 2–5 minute chunks.
-- [ ] Every task cites exact file paths and explicit verification commands.
-- [ ] High-risk actions (breaking changes, schema drops) have defined rollback milestones.
-- [ ] User alignment was requested and received prior to execution.
-- [ ] Post-implementation regression checks confirm zero unintended collateral damage.
-
----
-
-## Output Format: Implementation Plan Artifact
-
-Every plan-and-execute session must produce a structured `implementation_plan.md`:
-
-```markdown
-# [Feature / Task Name] Implementation Plan
-
-**Status**: DRAFT → APPROVED → IN-PROGRESS → COMPLETE
-**Blast Radius**: LOW / MEDIUM / HIGH / CRITICAL
-**Estimated Duration**: X tasks × 3 min avg = ~Y minutes
-
----
-
-## Objective & Scope
-- **In-Scope**: [Concrete deliverables]
-- **Out-of-Scope**: [Explicit exclusions to prevent scope creep]
-
----
-
-## Architectural Trade-Offs & Decision Log (ADR)
-| Option | Pros | Cons | Selected |
-|:--|:--|:--|:--|
-| PostgreSQL + SQLAlchemy | ACID, rich queries | Heavier setup | YES |
-| SQLite | Zero setup | No concurrent writes | No |
-
----
-
-## Step-by-Step Task Breakdown
-| # | File | Action | Verification Command | Risk |
-|:--|:--|:--|:--|:--|
-| 1 | `models/user.py` | Add `revoked_at` column | `pytest tests/test_models.py` | LOW |
-| 2 | `services/auth.py` | Implement revocation check | `pytest tests/test_auth.py -k test_revoke` | MEDIUM |
-| 3 | `api/routes/auth.py` | Wire /revoke endpoint | `curl -X POST localhost:8000/revoke` | LOW |
-
----
-
-## Rollback & Recovery
-- **Pre-execution**: `git stash` or `git tag pre-plan-$(date +%Y%m%d)` before Step 1
-- **If Step 2 fails**: `git checkout -- services/auth.py && re-run tests`
-```
-
----
-
-## HITL Decision Matrix
-
-Use this to decide whether to pause and request human approval:
-
-| Action Type | Risk Level | Required Approval |
-|:--|:--|:--|
-| Add new files / functions | LOW | No — proceed autonomously |
-| Modify existing functions | MEDIUM | No — proceed with verification |
-| Rename or move files | MEDIUM | Pause — confirm with user |
-| Drop database tables or columns | CRITICAL | Hard stop — HITL required |
-| Modify `.env` or secrets | CRITICAL | Hard stop — HITL required |
-| Bulk-delete files or directories | CRITICAL | Hard stop — HITL required |
-| Change authentication/authorization logic | HIGH | Pause — security review |
-| Modify CI/CD pipeline configuration | HIGH | Pause — confirm with user |
+After completing the workflow, confirm:
+- [ ] Implementation plan decomposes objective into sequenced, bite-sized tasks with dependency ordering.
+- [ ] Each task specifies target files, diff budget ($\le 150$ lines), verification commands, and expected outputs.
+- [ ] Explicit STOP-after-spec gate was observed and user approval was received prior to modifying code.
+- [ ] Architectural trade-offs and decision rationale are logged.
+- [ ] Verified against criteria in [references/done.md](../../../references/done.md).

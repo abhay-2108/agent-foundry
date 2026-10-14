@@ -1,0 +1,2 @@
+description = "Scan codebases for OWASP Top 10 vulnerabilities and hardcoded secrets."
+prompt = "Use the security-vulnerability-scanner workflow to: $ARGUMENTS"

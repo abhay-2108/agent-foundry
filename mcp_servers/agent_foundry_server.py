@@ -38,17 +38,6 @@ from mcp_servers.code_sandbox_server import execute_python_code, run_shell_comma
 from mcp_servers.filesystem_server import SafeFilesystem
 from mcp_servers.hybrid_retriever_server import HybridSearchEngine
 
-# TypeSafe System One tools import
-typesafe_scripts_dir = str(REPO_ROOT / "skills" / "llm-engineering" / "typesafe-ai" / "scripts")
-if typesafe_scripts_dir not in sys.path:
-    sys.path.insert(0, typesafe_scripts_dir)
-try:
-    from typesafe_router import TypeSafeRouter
-    from typesafe_verifier import TypeSafeVerifier
-except Exception as e:
-    TypeSafeRouter = None
-    TypeSafeVerifier = None
-
 # MCP SDK import
 from mcp.server.fastmcp import FastMCP
 
@@ -60,13 +49,12 @@ DEFAULT_LOCAL_DB = str(REPO_ROOT / ".memory" / "agent_foundry_memory.db")
 GLOBAL_DB_PATH = os.environ.get("AGENT_FOUNDRY_GLOBAL_DB", DEFAULT_LOCAL_DB)
 try:
     memory_engine = AgentMemoryEngine(session_id="global_session", db_path=GLOBAL_DB_PATH)
-except Exception:
+except Exception as e:
+    print(f"[WARN] Global DB init failed ({e}), falling back to local DB.", file=sys.stderr)
     memory_engine = AgentMemoryEngine(session_id="global_session", db_path=DEFAULT_LOCAL_DB)
 workflow_engine = WorkflowEngine(workspace_root=REPO_ROOT)
 retriever_engine = HybridSearchEngine()
 fs_handler = SafeFilesystem(allowed_root=REPO_ROOT)
-typesafe_router = TypeSafeRouter() if TypeSafeRouter else None
-typesafe_verifier = TypeSafeVerifier() if TypeSafeVerifier else None
 
 
 # ======================================================================
@@ -220,7 +208,7 @@ def index_documents(documents_json: str) -> str:
 def memory_record_fact(category: str, fact_key: str, fact_text: str, verify_consistency: bool = True) -> str:
     """
     Stores or updates a durable semantic fact in Tier 3 Long-Term Memory.
-    Applies TypeSafe / Jev consistency verification to guard against memory poisoning and contradictions.
+    Applies offline consistency verification to guard against memory poisoning and contradictions.
     Persists across sessions in the global SQLite database.
     """
     try:
@@ -390,65 +378,11 @@ def workflow_execute(workflow_id: str, parameters_json: str = "{}") -> str:
 
 
 # ======================================================================
-# 6. TypeSafe System One Tools
+# 6. Risk Evaluation Tool
 # ======================================================================
 
 @mcp.tool()
-def typesafe_route_task(prompt: str, active_file: str = "") -> str:
-    """
-    Evaluates prompt state in ~100ms using TypeSafe System One (Jev) to return the
-    optimal specialist persona (@lead-orchestrator, @security-red-teamer, etc.),
-    recommended skill runbook, and task category.
-    """
-    if not typesafe_router:
-        return json.dumps({"status": "ERROR", "error": "TypeSafeRouter module unavailable."})
-    try:
-        decision = typesafe_router.route(prompt, active_file=active_file if active_file else None)
-        return json.dumps({
-            "status": "SUCCESS",
-            "prompt": decision.user_prompt,
-            "target_persona": decision.target_persona,
-            "target_skill": decision.target_skill,
-            "task_type": decision.task_type,
-            "needs_specialist": decision.needs_specialist,
-            "persona_confidence": decision.persona_confidence,
-            "skill_confidence": decision.skill_confidence,
-            "recommended_action": decision.recommended_action,
-            "mode": decision.mode
-        }, indent=2)
-    except Exception as e:
-        return json.dumps({"status": "ERROR", "error": str(e)})
-
-
-@mcp.tool()
-def typesafe_verify_claim(claim: str, source_context: str) -> str:
-    """
-    Double-checks claims and generated code against source evidence using TypeSafe
-    System One. Returns calibrated support probability (0-100%), divergence severity
-    (none/minor/moderate/critical), and action (PASS, FLAG_FOR_REVIEW, REJECT_AND_RETRY).
-    """
-    if not typesafe_verifier:
-        return json.dumps({"status": "ERROR", "error": "TypeSafeVerifier module unavailable."})
-    try:
-        report = typesafe_verifier.verify(claim, source_context)
-        return json.dumps({
-            "status": "SUCCESS",
-            "claim": report.claim,
-            "is_faithful": report.is_faithful,
-            "support_probability": report.support_probability,
-            "support_status": report.support_status,
-            "severity_score": report.severity_score,
-            "severity_label": report.severity_label,
-            "recommended_action": report.recommended_action,
-            "explanation": report.explanation,
-            "mode": report.mode
-        }, indent=2)
-    except Exception as e:
-        return json.dumps({"status": "ERROR", "error": str(e)})
-
-
-@mcp.tool()
-def typesafe_evaluate_risk(command_or_action: str) -> str:
+def evaluate_risk(command_or_action: str) -> str:
     """
     Evaluates the destructive and security risk of a shell command, file modification,
     or tool action on a 0-3 scale. Informs human-in-the-loop approval gates.
@@ -541,26 +475,13 @@ def run_self_test() -> int:
     assert search_res["results_count"] > 0
     print("     [OK] hybrid_search passed.")
 
-    # 5. TypeSafe System One tools test
-    print("  -> Testing TypeSafe FastMCP tools...")
-    route_res = json.loads(typesafe_route_task("Audit our endpoints for SQL injection"))
-    assert route_res["status"] == "SUCCESS"
-    assert route_res["target_persona"] == "security-red-teamer"
-    print(f"     [OK] typesafe_route_task passed (@{route_res['target_persona']}).")
-
-    verify_res = json.loads(typesafe_verify_claim(
-        "DuckDB supports columnar execution.",
-        "DuckDB is an in-process database supporting columnar execution."
-    ))
-    assert verify_res["status"] == "SUCCESS"
-    assert verify_res["recommended_action"] == "PASS"
-    print(f"     [OK] typesafe_verify_claim passed ({verify_res['recommended_action']}).")
-
-    risk_res = json.loads(typesafe_evaluate_risk("rm -rf /"))
+    # 5. Risk evaluation tool test
+    print("  -> Testing risk evaluation tool...")
+    risk_res = json.loads(evaluate_risk("rm -rf /"))
     assert risk_res["status"] == "SUCCESS"
     assert risk_res["risk_level"] == "critical"
     assert risk_res["requires_human_approval"] is True
-    print(f"     [OK] typesafe_evaluate_risk passed ({risk_res['risk_level']}).")
+    print(f"     [OK] evaluate_risk passed ({risk_res['risk_level']}).")
 
     print("\n[+] ALL AGENT FOUNDRY FASTMCP TESTS PASSED SUCCESSFULLY!")
     return 0

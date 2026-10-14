@@ -1,0 +1,2 @@
+description = "Isolate, reproduce, and fix runtime crashes using minimal repro test cases."
+prompt = "Use the bug-hunter workflow to: $ARGUMENTS"

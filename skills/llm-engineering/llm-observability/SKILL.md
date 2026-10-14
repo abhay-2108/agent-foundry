@@ -5,11 +5,11 @@ description: Use this skill when instrumenting AI agents, LLM pipelines, and too
 
 # LLM Observability & Distributed Agent Tracing
 
-A vendor-neutral telemetry skill for instrumenting LLM applications, multi-agent swarms, and RAG pipelines using **OpenTelemetry GenAI Semantic Conventions** and **OpenInference**.
+## Overview
 
----
+Instruments AI agents, LLM pipelines, and tool calls with vendor-neutral distributed tracing and observability. Implements OpenTelemetry GenAI semantic conventions, token burn tracking, latency profiling, and error attribution across Langfuse, Phoenix, or Datadog.
 
-## When to Use This Skill
+## When to Use
 
 - Instrumenting multi-agent workflows with end-to-end distributed tracing across steps and tools.
 - Capturing hierarchical call trees: Agent Reasoning $\rightarrow$ Tool Execution $\rightarrow$ Vector Retrieval $\rightarrow$ LLM Generation.
@@ -19,6 +19,9 @@ A vendor-neutral telemetry skill for instrumenting LLM applications, multi-agent
 - Logging evaluation scores (faithfulness, hallucination, user ratings) directly attached to trace IDs.
 
 ---
+- **When NOT to use**: Traditional host infrastructure CPU/RAM monitoring (use `sre-devops-guardian`), or purely offline prompt benchmarking (use `llm-evals-engineer`).
+
+## Core Process & Telemetry Instrumentation
 
 ## Core Architecture: Hierarchical Tracing Model
 
@@ -98,22 +101,26 @@ Telemetry exports via standard OpenTelemetry OTLP protocol. Change destinations 
 
 - [`scripts/telemetry_engine.py`](./scripts/telemetry_engine.py): Standalone, typed telemetry manager with PII regex redaction, pricing calculation for OpenAI/Anthropic/Gemini, and evaluation score attachment.
 
----
+## Common Rationalizations
 
-## Anti-Patterns & Traps to Avoid
+| Rationalization | Reality |
+|---|---|
+| *"Standard application logs (`console.log`, `print`) are sufficient for LLMs."* | Linear text logs cannot represent hierarchical multi-agent DAG execution, tool nesting, token costs, or prompt/completion payloads. |
+| *"Tracing adds excessive network latency to user-facing streaming."* | Asynchronous non-blocking OTLP exporters queue spans in memory and flush batches in background threads with zero UI latency impact. |
+| *"We don't need token tracking because our API quota is large."* | Undetected prompt bloat or infinite agent tool loops can burn thousands of dollars in minutes without per-request token telemetry. |
+| *"Logging user prompts doesn't violate privacy if it's internal."* | Unsanitized telemetry spans leak user PII, credentials, and confidential business documents into monitoring SaaS dashboards. |
 
-1. **Synchronous Span Exporting on the Hot Path**: Calling trace export endpoints synchronously in the main execution thread. This adds 50–200ms of network overhead to every LLM turn. Always use asynchronous batching with `BatchSpanProcessor`.
-2. **Vendor SDK Lock-in in Core Domain Logic**: Littering business logic with proprietary vendor decorators (`@observe`, `langfuse.trace()`). Abstract telemetry around OpenTelemetry / OpenInference standards so collectors can be swapped via environment variables.
-3. **Leaking Unredacted PII to Third-Party Dashboards**: Streaming raw user credit cards, API keys, or personal health information into centralized logging platforms. Apply deterministic regex masking before emitting span attributes.
-4. **Ignoring Streaming Latency Signals (TTFT)**: Measuring only total end-to-end duration while ignoring Time to First Token (TTFT). Users perceive streaming responsiveness based on TTFT; failure to capture chunk arrival times blinds you to streaming proxy stalls.
+## Red Flags
 
----
+- Agent tool calls executing without parent-span trace IDs, making multi-turn failures impossible to reconstruct.
+- Missing token count and cost attribution tags on model generation spans.
+- Synchronous telemetry exports blocking the main event loop.
+- Unmasked PII or API secrets persisted in OpenTelemetry trace payloads.
 
-## Quality Checklist
+## Verification
 
-- [ ] Telemetry conforms to **OpenTelemetry GenAI Semantic Conventions** and **OpenInference**.
-- [ ] No vendor lock-in: collector target is swappable via `OTEL_EXPORTER_OTLP_ENDPOINT`.
-- [ ] Traces capture full hierarchy: Agent Workflow $\rightarrow$ Tool Execution $\rightarrow$ Model Generation.
-- [ ] Token usage (`prompt_tokens`, `completion_tokens`) and USD costs are recorded per span.
-- [ ] Latency signals are captured: Total Duration and Time to First Token (TTFT).
-- [ ] Sensitive customer data (emails, credit cards, SSNs) is sanitized prior to export.
+After completing the workflow, confirm:
+- [ ] Hierarchical trace spans cleanly separate root sessions, workflow steps, tool calls, and model generations.
+- [ ] Token usage (input, completion, cached) and latency are tracked per request.
+- [ ] OpenTelemetry GenAI semantic conventions (`gen_ai.system`, `gen_ai.request.model`) are adhered to.
+- [ ] Tracing engine passes self-test: `python skills/llm-engineering/llm-observability/scripts/telemetry_engine.py`.

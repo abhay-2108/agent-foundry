@@ -1,0 +1,8 @@
+{
+  "name": "agent-foundry",
+  "version": "2.0.0",
+  "description": "Antigravity plugin registration for Agent Foundry.",
+  "skills": "../../../skills",
+  "agents": "../../../agents",
+  "references": "../../../references"
+}

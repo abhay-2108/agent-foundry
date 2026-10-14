@@ -6,13 +6,17 @@ description: >-
 
 # LLM Council
 
-You ask one AI a question, you get one answer. That answer might be great. It might be mid. You have no way to tell because you only saw one perspective.
+## Overview
 
-The council fixes this. It runs your question through 5 independent advisors, each thinking from a fundamentally different angle. Then they review each other's work. Then a chairman synthesizes everything into a final recommendation that tells you where the advisors agree, where they clash, and what you should actually do.
+Executes multi-perspective decision pressure-testing inspired by Karpathy's LLM Council methodology. Runs critical architectural questions through 5 independent AI advisors, peer-reviews arguments anonymously, and synthesizes a balanced consensus verdict.
 
-This is adapted from Andrej Karpathy's LLM Council. He dispatches queries to multiple models, has them peer-review each other anonymously, then a chairman produces the final answer. We do the same thing inside Claude and Antigravity using sub-agents or specialized personas with different thinking lenses.
+## When to Use
 
----
+- Use when designing, building, or refining this capability.
+- Use when evaluating accuracy, latency, and reliability.
+- **When NOT to use**: Simple factual lookups, trivial yes/no syntax questions, or mechanical refactoring.
+
+## Core Process & Multi-Advisor Peer Review Workflow
 
 ## When to Run the Council
 
@@ -219,3 +223,27 @@ Only save a transcript if explicitly requested or for major strategic decisions.
 - **The Chairman Can Dissent**: If 4 out of 5 advisors agree but the 1 dissenter presents irrefutable logic, the Chairman should back the dissenter.
 - **No Hedging**: Never output "it depends" without delivering a clear, actionable default path.
 - **Zero Triviality**: Do not trigger the council on factual queries or simple execution tasks.
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| *"One smart model's opinion is enough to make an architectural choice."* | Single models have idiosyncratic blind spots; running multi-perspective council reviews uncovers hidden failure modes and trade-offs. |
+| *"Advisors should see each other's answers immediately to collaborate."* | Immediate visibility causes early anchoring and sycophancy; advisors must draft independently before peer review. |
+| *"The synthesis should just average everyone's votes."* | Averaging votes produces bland compromises; the synthesis must highlight genuine trade-offs, dissenting opinions, and contextual conditions. |
+| *"Council reviews are too expensive for everyday choices."* | Council review is reserved for high-stakes, irreversible architectural decisions where a wrong turn costs weeks of engineering effort. |
+
+## Red Flags
+
+- Advisors echoing each other's arguments due to lack of blinded independent generation.
+- Synthesis ignoring strong minority dissent without evaluating the dissenting evidence.
+- Triggering council review on trivial questions where a standard single-turn response suffices.
+- Failing to document the specific technical trade-offs that led to the final verdict.
+
+## Verification
+
+After completing the workflow, confirm:
+- [ ] 5 distinct advisor perspectives independently evaluate the decision question.
+- [ ] Peer reviews critique each proposal anonymously without author bias.
+- [ ] Final synthesis documents: The Verdict, Consensus Points, Core Disagreements, and Concrete Action Plan.
+- [ ] Decision rationale is recorded into an ADR for repository knowledge persistence.

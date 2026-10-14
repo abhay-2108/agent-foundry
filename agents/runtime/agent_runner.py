@@ -96,6 +96,14 @@ class AgentRegistry:
             return {}
 
         yaml_text = match.group(1)
+        try:
+            import yaml
+            parsed = yaml.safe_load(yaml_text)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+
         data: Dict[str, Any] = {}
         current_list_key = None
         current_multiline_key = None
@@ -187,13 +195,16 @@ class AgentRegistry:
             agent_md = agent_folder / "AGENT.md"
             if agent_folder.is_dir() and agent_md.exists():
                 fm = self._parse_frontmatter(agent_md)
+                meta_dict = fm.get("metadata", {})
+                if not isinstance(meta_dict, dict):
+                    meta_dict = {}
                 meta = AgentMetadata(
                     name=fm.get("name", entry),
-                    role=fm.get("role", "Specialist Agent"),
+                    role=meta_dict.get("role", fm.get("role", "Specialist Agent")),
                     description=fm.get("description", ""),
-                    model_tier=fm.get("model_tier", "balanced"),
-                    governance_level=fm.get("governance_level", "autonomous"),
-                    bound_skills=fm.get("bound_skills", []),
+                    model_tier=meta_dict.get("model_tier", fm.get("model_tier", "balanced")),
+                    governance_level=meta_dict.get("governance_level", fm.get("governance_level", "autonomous")),
+                    bound_skills=meta_dict.get("bound_skills", fm.get("bound_skills", [])),
                     agent_dir=str(agent_folder),
                     full_spec_path=str(agent_md),
                 )

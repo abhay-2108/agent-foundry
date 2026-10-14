@@ -8,15 +8,21 @@ description: >-
 
 # Graph RAG Builder & Knowledge Graph Architect
 
-Enables agents to perform complex, multi-hop reasoning over connected entities and relationships by combining graph databases with semantic language models (GraphRAG).
+## Overview
 
-## When to Use This Skill
+Builds, extracts, and queries Knowledge Graph-enhanced RAG (GraphRAG) systems using Neo4j, NetworkX, and Graphiti. Extracts entities, relations, and communities from unstructured text to enable multi-hop relational reasoning across complex corpora.
+
+## When to Use
+
 - When questions require tracing multi-step connections between people, companies, software modules, or concepts (`"Which services depend on the authentication gateway through indirect calls?"`).
 - When vector search fails because relevant facts are scattered across hundreds of separate pages.
 - When building hierarchical knowledge graphs, community summaries, or entity catalogs.
 - Trigger phrases: `"GraphRAG"`, `"knowledge graph"`, `"Neo4j agent"`, `"entity extraction"`, `"multi-hop reasoning"`.
 
 ---
+- **When NOT to use**: Flat vector-only chunk retrieval (use `agentic-rag-engineer`) or relational SQL database modeling (use `backend-architecture`).
+
+## Core Process & Knowledge Graph Construction
 
 ## Vector Search vs. Graph RAG
 
@@ -78,20 +84,26 @@ RETURN origin.name, downstream.name, count(*) as hops;
 - Use community detection algorithms (e.g. Leiden or Louvain) to cluster related nodes into sub-graphs.
 - Pre-generate hierarchical summaries for each community to answer broad thematic questions ("What are the main architecture risks across the entire platform?").
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Unbounded Multi-Hop Graph Traversal**: Executing graph queries without edge depth limits (e.g., `[:DEPENDS_ON*]`). On dense graphs, this triggers combinatorial explosion, database timeouts, and memory crashes. Always enforce explicit hop bounds (e.g., `[:DEPENDS_ON*1..3]`).
-2. **Entity Duplication & Canonicalization Failure**: Inserting synonyms as distinct nodes (e.g., "Postgres", "PostgreSQL", and "PG_DB" as 3 separate nodes). This severs relationship paths and breaks multi-hop reasoning. Always run entity resolution prior to graph ingestion.
-3. **The Knowledge Graph "Hairball"**: Extracting trivial verbs or unconstrained relationships from conversational text. Without an ontology schema, the graph fills with low-signal edges that drown out causal connections.
-4. **Local Traversal for Global Queries**: Attempting to answer high-level thematic queries ("Summarize all security risks across the enterprise") using local node neighborhood searches. Global questions require hierarchical community detection (Leiden/Louvain) summaries.
+| Rationalization | Reality |
+|---|---|
+| *"Standard RAG is good enough; Knowledge Graphs add too much complexity."* | Standard RAG cannot perform multi-hop reasoning (e.g. connecting Entity A -> Entity B -> Entity C across disparate documents). |
+| *"We can extract entities using regex without an LLM."* | Regex cannot resolve entity coreferences ('it', 'the company', 'the CEO') or infer nuanced relationship predicates. |
+| *"Entity deduplication can be done by simple lowercase string matching."* | Acronyms, aliases, and misspellings require embedding-based clustering or canonical entity resolution. |
+| *"Graph queries can replace vector search entirely."* | Graph traversal requires seed entities; optimal retrieval combines vector search to find seed nodes with graph walks to explore context. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Knowledge graph with disconnected orphan nodes due to missing coreference resolution.
+- Unbounded Cypher/graph traversal queries that cause exponential graph walk timeouts.
+- Extracting generic, low-information relation predicates (`RELATED_TO`, `HAS_THING`).
+- Failing to persist source chunk provenance on graph edges.
 
-- [ ] Entity resolution normalizes synonyms and aliases into canonical node identifiers before insertion.
-- [ ] Triplet extraction is constrained by an explicit entity and relationship ontology.
-- [ ] Cypher / Gremlin queries enforce hard depth boundaries (`*1..3`) and pagination limits.
-- [ ] Node labels and relationship types use consistent capitalization and snake_case conventions.
-- [ ] Hierarchical community detection (Leiden/Louvain) is pre-computed for corpus-wide global queries.
-- [ ] Retrieved subgraphs are formatted into clean natural language context strings before passing to LLM generation.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Entity extraction extracts typed nodes (Person, Org, Service, Concept) with canonical IDs.
+- [ ] Relation predicates are explicit, directed, and grounded in source text.
+- [ ] Multi-hop queries successfully traverse 2-3 hops to answer complex relational questions.
+- [ ] Graph queries return both structured subgraphs and cited provenance references.

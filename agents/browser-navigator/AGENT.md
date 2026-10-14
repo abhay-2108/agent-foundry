@@ -1,10 +1,15 @@
 ---
 name: browser-navigator
-role: Browser Automation, Web Navigation & DOM Extraction Specialist
-description: Autonomous web-navigating agent that interacts with web applications via Playwright, bypasses dynamic JS obstacles, fills forms, captures visual screenshots, and extracts structured DOM datasets.
-model_tier: balanced
-governance_level: autonomous
-bound_skills:
+description: Autonomous web-navigating agent that interacts with web applications
+  via Playwright, bypasses dynamic JS obstacles, fills forms, captures visual screenshots,
+  and extracts structured DOM datasets. Use when automating browser interactions,
+  crawling dynamic web pages, capturing visual regression screenshots, or verifying
+  end-to-end DOM states.
+metadata:
+  role: Browser Automation, Web Navigation & DOM Extraction Specialist
+  model_tier: balanced
+  governance_level: autonomous
+  bound_skills:
   - workspace-researcher
   - office-doc-engine
   - llm-observability
@@ -29,9 +34,9 @@ The **Browser Navigator** is the web interaction and computer-use specialist. It
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`workspace-researcher`](../../skills/workspace-researcher/SKILL.md)** | Directs web searches, filters domain authority, deduplicates URLs, and extracts clean markdown from raw pages. |
-| **[`office-doc-engine`](../../skills/office-doc-engine/SKILL.md)** | Compiles scraped data, screenshots, and audits into structured Excel (.xlsx) workbooks or Word (.docx) reports. |
-| **[`llm-observability`](../../skills/llm-observability/SKILL.md)** | Logs browser session durations, page transition latencies, and screenshot artifact URIs. |
+| **[`workspace-researcher`](../../skills/writing-and-research/workspace-researcher/SKILL.md)** | Directs web searches, filters domain authority, deduplicates URLs, and extracts clean markdown from raw pages. |
+| **[`office-doc-engine`](../../skills/writing-and-research/office-doc-engine/SKILL.md)** | Compiles scraped data, screenshots, and audits into structured Excel (.xlsx) workbooks or Word (.docx) reports. |
+| **[`llm-observability`](../../skills/llm-engineering/llm-observability/SKILL.md)** | Logs browser session durations, page transition latencies, and screenshot artifact URIs. |
 
 ---
 
@@ -210,3 +215,11 @@ The `browser-navigator` produces a comprehensive E2E test execution report:
 | **Hydration Mismatch / Slow SPA Render** | DOM elements clickable before React/Vue event listeners bind | Wait on network idle or framework-specific readiness flag (e.g. `window.__APP_READY__`) |
 | **Browser Zombie Process Leak** | Chromium processes remain after test run completion | Enforce context manager teardown (`with sync_playwright()`); run process reaper in teardown fixtures |
 | **Flaky Layout Shift on Screenshot** | Visual diff fails due to async image loading or fonts | Trigger `document.fonts.ready` wait and inject CSS `* { animation: none !important; transition: none !important; }` before capture |
+
+---
+
+## Composition
+- **Invoke directly when**: automating browser interactions, crawling dynamic web pages, capturing visual regression screenshots, or verifying end-to-end DOM states
+- **Invoke via**: /browser, /research, or user workflow
+- **Do not invoke from another persona**: Personas never invoke personas.
+

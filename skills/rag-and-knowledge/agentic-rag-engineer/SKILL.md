@@ -8,9 +8,12 @@ description: >-
 
 # Agentic RAG Engineer & Advanced Retrieval
 
-A production engineering skill for building intelligent, self-correcting Retrieval-Augmented Generation (RAG) pipelines that eliminate retrieval hallucinations, irrelevant context, and missed answers.
+## Overview
 
-## When to Use This Skill
+Designs, implements, and optimizes production Retrieval-Augmented Generation (RAG) architectures. Combines dense vector embeddings with BM25 sparse search (hybrid retrieval), semantic chunking, cross-encoder re-ranking, and Self-RAG/CRAG verification loops.
+
+## When to Use
+
 - When standard naive vector search returns irrelevant or incomplete chunks.
 - When designing semantic search across complex documentation, codebases, or manuals.
 - When implementing **Self-RAG** (retrieval on demand with reflection) or **Corrective RAG (CRAG)**.
@@ -18,6 +21,9 @@ A production engineering skill for building intelligent, self-correcting Retriev
 - Trigger phrases: `"build RAG"`, `"improve retrieval"`, `"semantic chunking"`, `"hybrid search"`, `"reranking"`, `"RAG pipeline"`.
 
 ---
+- **When NOT to use**: Pure web-scraping pipelines (use `workspace-researcher`) or knowledge graph construction (use `graph-rag-builder`).
+
+## Core Process & Advanced Retrieval Pipeline
 
 ## Modern RAG Architecture & Self-Corrective Loop
 
@@ -106,20 +112,26 @@ filtered_context = [candidates[r.index] for r in response.results if r.relevance
 ### Step 4: Grounded Answer Generation with Citations
 Inject filtered chunks into the generation prompt and enforce inline brackets citations (`[Doc 1, Section 2.3]`).
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Fixed-Token Naive Chunking**: Slicing documents at arbitrary 500-character boundaries. This routinely bifurcates markdown tables, function blocks, or bullet lists across chunks, destroying retrieval context. Use semantic or Markdown-aware chunkers.
-2. **Dense-Only Retrieval for Exact Identifiers**: Relying exclusively on vector similarity for product SKUs, error codes, UUIDs, or function names. Dense models frequently hallucinate nearest semantic neighbors for exact alphanumerics; always pair dense vectors with BM25 keyword search.
-3. **"Lost in the Middle" Context Flooding**: Stuffing 25+ retrieved chunks into the generation prompt. LLMs exhibit severe recall degradation in the middle of long contexts. Always apply a cross-encoder to filter down to the top 3–5 highest-relevance passages.
-4. **Ungrounded Output Without Inline Citations**: Permitting the model to synthesize answers without citing source chunk brackets (`[Doc 2, p. 14]`). Without citations, hallucinated interpolations cannot be verified.
+| Rationalization | Reality |
+|---|---|
+| *"Vector search alone is sufficient for technical search queries."* | Vector search fails on exact keyword matches, error codes, and version numbers; hybrid dense + BM25 sparse search is non-negotiable. |
+| *"Fixed chunking (e.g. 500 characters) works for any document."* | Fixed chunking cuts off function definitions, table rows, and headers mid-sentence; semantic or AST-aware chunking is necessary. |
+| *"Re-ranking adds unnecessary latency to retrieval."* | Cross-encoder re-ranking over top-25 candidates improves NDCG@5 by 20-30% with sub-20ms latency overhead. |
+| *"If retrieval returns documents, the answer is guaranteed to be faithful."* | Retrieved passages often contain contradictory or irrelevant text; Corrective RAG (CRAG) must verify document relevance before generation. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Retrieval pipelines using only dense vector search without sparse BM25 lexical support.
+- Passing raw un-ranked top-K chunks directly to the generator without cross-encoder scoring.
+- Chunking documents without maintaining source document metadata and line-range headers.
+- Generating answers when zero retrieved documents pass minimum relevance confidence thresholds.
 
-- [ ] Chunking respects semantic boundaries (markdown headers, code blocks, tables preserved intact).
-- [ ] Hybrid retrieval unifies dense vectors and sparse BM25 via Reciprocal Rank Fusion (RRF).
-- [ ] Cross-encoder re-ranking filters candidate pools down to top 3–5 passages with explicit score thresholds ($\ge 0.6$).
-- [ ] Self-corrective fallback triggers web search or query reformulation when retrieved relevance is low.
-- [ ] Generation prompt strictly enforces bracketed inline citations tied to source document IDs.
-- [ ] Hallucination / faithfulness grading verifies that all claims in the response originate from the context chunks.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Hybrid search engine combines dense vector scores with BM25 lexical scores using Reciprocal Rank Fusion (RRF).
+- [ ] Semantic chunking preserves complete code functions, markdown tables, and header hierarchies.
+- [ ] Cross-encoder re-ranker filters out noisy documents before prompt injection.
+- [ ] Retrieval benchmark evaluates Context Precision, Recall, and Faithfulness above 0.85.

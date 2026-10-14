@@ -19,7 +19,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 def execute_python_code(code: str, timeout_seconds: int = 10) -> Dict[str, Any]:
@@ -81,8 +81,19 @@ def execute_python_code(code: str, timeout_seconds: int = 10) -> Dict[str, Any]:
 
 
 def run_shell_command(command: str, cwd: Optional[str] = None, timeout_seconds: int = 15) -> Dict[str, Any]:
-    """Executes a bounded shell command with directory anchoring and timeout guards."""
+    """Executes a bounded shell command with directory anchoring and timeout guards.
+
+    Security: caller must validate untrusted input before invoking with shell=True.
+    Blocklist rejects destructive patterns; use arg-list APIs for user paths.
+    """
     start_time = time.time()
+    if not command or not command.strip():
+        return {"status": "INVALID_INPUT", "exit_code": 2, "stdout": "", "stderr": "Empty command rejected.", "duration_ms": 0}
+    if len(command) > 8000:
+        return {"status": "INVALID_INPUT", "exit_code": 2, "stdout": "", "stderr": "Command exceeds 8000 char limit.", "duration_ms": 0}
+    _blocked = ("rm -rf /", "mkfs", ":(){:|:&};:", "shutdown", "reboot", "del /f /s /q C:\\")
+    if any(b in command for b in _blocked):
+        return {"status": "BLOCKED", "exit_code": 2, "stdout": "", "stderr": "Command matches destructive blocklist.", "duration_ms": 0}
     work_dir = cwd if cwd and os.path.exists(cwd) else os.getcwd()
 
     try:

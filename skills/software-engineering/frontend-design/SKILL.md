@@ -8,13 +8,19 @@ description: >-
 
 # Frontend Design & UI/UX Craftsmanship
 
-Guides the creation of visually stunning, highly interactive, and responsive user interfaces that deliver a premium first impression while adhering to accessibility and performance standards.
+## Overview
 
-## When to Use This Skill
+Crafts modern, aesthetically exceptional user interfaces and design systems. Enforces curated HSL color palettes, accessible contrast ratios, fluid typography, dark mode architectures, micro-animations, and responsive layouts.
+
+## When to Use
+
 - When creating web applications, landing pages, dashboards, or mobile interfaces.
 - When styling UI components, establishing CSS design tokens, or overhauling visual aesthetics.
 - When transitioning rough wireframes or functional prototypes into polished, production-ready interfaces.
 - Trigger phrases: `"build frontend"`, `"design UI"`, `"style this component"`, `"make it look modern"`, `"improve UI/UX"`.
+- **When NOT to use**: Backend database optimization (use `backend-architecture`) or low-level LLM token streaming repair (use `agentic-ui-patterns`).
+
+## Core Process & UI/UX Design System Craftsmanship
 
 ## Core Design Principles
 
@@ -72,20 +78,26 @@ Define global CSS variables before writing component markup:
 - Isolate layout concerns: use Flexbox for 1D alignments, CSS Grid for 2D page layouts.
 - Always handle empty states, loading states, and error states gracefully.
 
-## Anti-Patterns & Traps to Avoid
+## Common Rationalizations
 
-1. **Ad-Hoc Hex Code Sprawl**: Scattering uncoordinated arbitrary hex values (`#333`, `#007bff`, `#e2e8f0`) across multiple stylesheets instead of referencing semantic design tokens (`var(--bg-surface)`).
-2. **Generic "90s Default" Styling**: Using browser-default system fonts, sharp unrounded borders, raw primary colors, and flat hover states. Premium modern interfaces require tailored font pairings (e.g., Inter, Outfit), subtle glassmorphism, and smooth cubic-bezier transitions.
-3. **Animating Layout-Reflow Properties**: Animating `height`, `width`, `top`, or `margin` during transitions. This forces CPU browser reflows and drops frame rates below 60fps. Always animate GPU-accelerated `transform` (`translate`, `scale`) and `opacity`.
-4. **The "Happy Path Only" Trap**: Designing solely for perfectly populated datasets. An interface is incomplete if it lacks polished skeleton loaders, zero-data empty states, and gracefully styled error alerts.
+| Rationalization | Reality |
+|---|---|
+| *"Default browser fonts and plain blue/gray colors are fine for MVP."* | First impressions dictate product credibility; premium typography, sleek dark mode, and cohesive color palettes transform perception instantly. |
+| *"We don't need to test mobile layout until the desktop version is done."* | Desktop-first layouts almost always require painful, destructive refactoring to support responsive mobile viewports. |
+| *"Animations are just eye candy that slow down the interface."* | Subtle 150-250ms micro-interactions provide critical cognitive feedback on user actions and make interfaces feel alive and responsive. |
+| *"Accessibility contrast checks can be skipped for dark mode."* | Low-contrast gray text on dark backgrounds causes severe eye strain and violates WCAG AA standards. |
 
----
+## Red Flags
 
-## Quality Checklist
+- Using generic browser defaults (Times New Roman, Arial, unstyled HTML buttons).
+- Hardcoding ad-hoc hex colors across components instead of using a unified design token system.
+- Layouts that break or require horizontal scrolling on viewports under 768px.
+- Sluggish or jarring animations exceeding 350ms or triggering layout recalculations (animating `width`/`height` instead of `transform`/`opacity`).
 
-- [ ] Central design tokens (`:root`) define colors, radii, spacing, and transition curves.
-- [ ] Text contrast conforms strictly to WCAG AA guidelines (minimum 4.5:1 ratio).
-- [ ] Micro-interactions (hover, active, focus-visible) are implemented on all interactive elements.
-- [ ] Layout animations use GPU-accelerated properties (`transform`, `opacity`) with smooth easings.
-- [ ] Empty states, loading skeletons, and error messages are explicitly styled.
-- [ ] Mobile viewports are responsive with touch targets measuring at least $44 \times 44\text{px}$.
+## Verification
+
+After completing the workflow, confirm:
+- [ ] Design system defines tokens for colors, spacing, typography, and elevation.
+- [ ] Color contrast ratios meet WCAG AA standards (>4.5:1 for normal text).
+- [ ] Layout is verified responsive across mobile (375px), tablet (768px), and desktop (1440px).
+- [ ] Interactive states (hover, active, focus-visible, disabled) are implemented with smooth transitions.
