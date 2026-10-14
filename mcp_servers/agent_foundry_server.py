@@ -38,11 +38,21 @@ from mcp_servers.code_sandbox_server import execute_python_code, run_shell_comma
 from mcp_servers.filesystem_server import SafeFilesystem
 from mcp_servers.hybrid_retriever_server import HybridSearchEngine
 
-# MCP SDK import
-from mcp.server.fastmcp import FastMCP
+# MCP SDK import with cross-version fallback
+try:
+    from mcp.server.fastmcp import FastMCP
+    mcp = FastMCP("agent-foundry")
+except Exception:
+    class FallbackMCPServer:
+        def tool(self, *args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
 
-# Initialize FastMCP Server
-mcp = FastMCP("agent-foundry")
+        def run(self, *args, **kwargs):
+            print("[WARN] FastMCP not initialized; running in headless fallback mode.", file=sys.stderr)
+
+    mcp = FallbackMCPServer()
 
 # Global instances with robust fallbacks
 DEFAULT_LOCAL_DB = str(REPO_ROOT / ".memory" / "agent_foundry_memory.db")
