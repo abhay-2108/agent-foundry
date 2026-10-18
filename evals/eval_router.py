@@ -35,7 +35,7 @@ SKILL_KEYWORDS = {
     "prompt-architect": ["few-shot", "xml", "json schema", "prompt template"],
     "llm-observability": ["opentelemetry", "tracing", "ttft", "token usage"],
     "docker-container-architect": ["dockerfile", "alpine", "rootless", "multi-stage"],
-    "human-writer": ["human prose", "robotic", "ai-sounding", "voice-driven"],
+    "humanizer": ["humanize", "human prose", "robotic", "ai-sounding", "turnitin", "watermark"],
 }
 
 

@@ -118,7 +118,7 @@ flowchart TD
 - **Multi-stage, rootless, hardened Docker builds**: $\to$ [`docker-container-architect`](../../software-engineering/docker-container-architect/SKILL.md)
 - **Atomic commits, branch rebasing, worktrees**: $\to$ [`git-plumbing-and-automation`](../../software-engineering/git-plumbing-and-automation/SKILL.md)
 - **Office doc generation (Word, Excel, PDF)**: $\to$ [`office-doc-engine`](../../writing-and-research/office-doc-engine/SKILL.md)
-- **De-slopping technical writing into human prose**: $\to$ [`human-writer`](../../writing-and-research/human-writer/SKILL.md)
+- **De-slopping and programmatic text/code humanization**: $\to$ [`humanizer`](../../writing-and-research/humanizer/SKILL.md)
 - **Persona to consult**: `@sre-devops-guardian` or `@technical-writer-scribe`
 
 ### Phase 7: OBSERVE (Distributed Telemetry)

@@ -122,6 +122,14 @@ def sync_antigravity_config_skills():
     
     # Locate all SKILL.md files under WORKSPACE/skills
     ref_src = WORKSPACE / "references"
+    active_skills = {p.parent.name for p in (WORKSPACE / "skills").rglob("SKILL.md")}
+
+    # Purge obsolete skills
+    for existing in GEMINI_CONFIG_SKILLS.iterdir():
+        if existing.is_dir() and existing.name not in active_skills:
+            shutil.rmtree(existing)
+            print(f"    [-] Purged obsolete skill from global config: {existing.name}")
+
     skill_count = 0
     for skill_file in (WORKSPACE / "skills").rglob("SKILL.md"):
         skill_dir = skill_file.parent
@@ -213,7 +221,7 @@ All 41 skills are indexed globally under `~/.gemini/config/skills/`. Antigravity
 - **RAG & Knowledge (3)**: `agentic-rag-engineer`, `graph-rag-builder`, `mcp-tool-integrator`
 - **AI Security & Safety (3)**: `security-vulnerability-scanner`, `prompt-injection-red-teamer`, `guardrails-enforcer`
 - **AI Product & UX (2)**: `agentic-ui-patterns`, `executive-memo-architect`
-- **Writing & Research (5)**: `workspace-researcher`, `knowledge-capture`, `brainstorming`, `office-doc-engine`, `human-writer`, `humanize-ai-text`
+- **Writing & Research (5)**: `workspace-researcher`, `knowledge-capture`, `brainstorming`, `office-doc-engine`, `humanizer`
 - **Foundational Specialists**: `skill-creator`, `agent-memory-architect`, `statistical-hypothesis-tester`, `feature-engineering-pipeline`
 
 ---
@@ -305,6 +313,31 @@ def update_mcp_config():
         except Exception as e:
             print(f"    [!] Warning: Failed to update {plugin_mcp_config}: {e}")
 
+    # OpenCode MCP configuration (~/.config/opencode/opencode.jsonc)
+    opencode_cfg = Path.home() / ".config" / "opencode" / "opencode.jsonc"
+    if opencode_cfg.exists():
+        try:
+            cfg_text = opencode_cfg.read_text(encoding="utf-8")
+            clean_lines = [re.sub(r"(?<!https:)(?<!http:)//.*$", "", l) for l in cfg_text.splitlines()]
+            cfg_data = json.loads("\n".join(clean_lines))
+            mcp_sec = cfg_data.setdefault("mcp", {})
+            mcp_sec["agent-foundry"] = {
+                "type": "local",
+                "command": [
+                    sys.executable,
+                    str(AGENT_FOUNDRY_GLOBAL / "mcp_servers" / "agent_foundry_server.py")
+                ],
+                "environment": {
+                    "PYTHONPATH": str(AGENT_FOUNDRY_GLOBAL),
+                    "AGENT_FOUNDRY_GLOBAL_DB": str(GEMINI_DIR / "agent_foundry_memory.db")
+                },
+                "enabled": True
+            }
+            opencode_cfg.write_text(json.dumps(cfg_data, indent=2), encoding="utf-8")
+            print(f"    [+] Updated {opencode_cfg} with agent-foundry FastMCP server.")
+        except Exception as e:
+            print(f"    [!] Warning: Failed to update {opencode_cfg}: {e}")
+
 def sync_opencode_agents():
     print("[*] 5. Syncing enriched agent specs to OpenCode (~/AppData/Roaming/opencode/agents)...")
     OPENCODE_AGENTS.mkdir(parents=True, exist_ok=True)
@@ -391,10 +424,20 @@ def sync_opencode_commands():
         "vector-database-architect": ("vectordb", "Tune HNSW/IVFFlat indexes, SQ8/PQ vector quantization, and sizing"),
         "workspace-researcher": ("research", "Multi-source web and codebase intelligence gathering"),
         "get-shit-done": ("gsd", "Structured 3-tier work breakdown into milestones and vertical slices"),
-        "human-writer": ("human-writer", "Convert AI-generated text into authentic, natural prose using 29 anti-patterns"),
+        "humanizer": ("humanize", "Programmatic, zero-AI document and code humanizer defeating Turnitin, similarity, and AI detection"),
         "using-agent-skills": ("using-skills", "Central lifecycle decision tree, 6 operating rules, and skill router")
     }
     
+    # Clean up stale commands
+    active_cmds = {f"{cmd}.md" for _, (cmd, _) in skill_command_map.items()}
+    for existing in OPENCODE_COMMANDS.glob("*.md"):
+        if existing.name not in active_cmds:
+            try:
+                existing.unlink()
+                print(f"    [-] Purged obsolete OpenCode command: {existing.name}")
+            except Exception:
+                pass
+
     count = 0
     for skill_name, (cmd_name, desc) in skill_command_map.items():
         cmd_file = OPENCODE_COMMANDS / f"{cmd_name}.md"

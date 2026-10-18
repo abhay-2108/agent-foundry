@@ -1,0 +1,45 @@
+{
+  "because": [
+    "inasmuch as",
+    "in light of the fact that",
+    "seeing that",
+    "given that"
+  ],
+  "although": [
+    "even though",
+    "notwithstanding that",
+    "albeit that",
+    "granted that"
+  ],
+  "while": [
+    "whereas",
+    "whilst",
+    "at the same juncture that",
+    "even as"
+  ],
+  "since": [
+    "owing to the premise that",
+    "in view of the circumstance that",
+    "given that"
+  ],
+  "if": [
+    "contingent upon",
+    "in the event that",
+    "provided that",
+    "posited that"
+  ],
+  "unless": [
+    "except in the circumstance that",
+    "failing which",
+    "barring the contingency that"
+  ],
+  "whereas": [
+    "in stark juxtaposition to which",
+    "whilst",
+    "by contrast"
+  ],
+  "provided that": [
+    "on the proviso that",
+    "contingent upon the condition that"
+  ]
+}

@@ -121,7 +121,7 @@
   },
   {
     "id": "eval-25",
-    "input": "Rewrite this robotic, AI-sounding technical draft into authentic, voice-driven human prose using the 29 anti-patterns.",
-    "expected_skill": "human-writer"
+    "input": "Humanize this robotic, AI-sounding technical draft to defeat Turnitin similarity and remove AI detection footprints.",
+    "expected_skill": "humanizer"
   }
 ]

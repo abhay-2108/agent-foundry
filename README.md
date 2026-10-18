@@ -86,7 +86,7 @@ Explore detailed specifications, system prompts, operational state machines, and
 | **`browser-navigator`** | **Browser Automation & Scraping**: Playwright web navigation, dynamic SPA interaction, form filling, visual screenshot verification, and DOM extraction. | `balanced` | `autonomous` | `workspace-researcher`, `office-doc-engine`, `llm-observability` | [AGENT.md](./agents/browser-navigator/AGENT.md) |
 | **`sre-devops-guardian`** | **SRE, CI/CD & Deployments**: Multi-stage container hardening, Alpine/Distroless bases, zero-root UID enforcement, and incident triage. | `reasoning-heavy` | `checkpointed` | `docker-container-architect`, `git-plumbing-and-automation`, `backend-architecture`, `llm-observability` | [AGENT.md](./agents/sre-devops-guardian/AGENT.md) |
 | **`finops-token-router`** | **FinOps & Model Gateway**: Dynamic model routing (cheap 8B vs frontier reasoning), semantic prompt caching, and token burn rate tracking. | `fast` | `autonomous` | `llm-observability`, `llm-evals-engineer`, `backend-architecture` | [AGENT.md](./agents/finops-token-router/AGENT.md) |
-| **`technical-writer-scribe`** | **Documentation & ADRs**: Architecture Decision Records (ADRs), API reference guides, Amazon 6-page executive memos, changelogs, and de-slopped human-style writing. | `balanced` | `autonomous` | `human-writer`, `executive-memo-architect`, `knowledge-capture`, `office-doc-engine`, `workspace-researcher`, `llm-observability` | [AGENT.md](./agents/technical-writer-scribe/AGENT.md) |
+| **`technical-writer-scribe`** | **Documentation & ADRs**: Architecture Decision Records (ADRs), API reference guides, Amazon 6-page executive memos, changelogs, and de-slopped human-style writing. | `balanced` | `autonomous` | `humanizer`, `executive-memo-architect`, `knowledge-capture`, `office-doc-engine`, `workspace-researcher`, `llm-observability` | [AGENT.md](./agents/technical-writer-scribe/AGENT.md) |
 
 ---
 
@@ -136,7 +136,7 @@ Every skill includes trigger keywords, step-by-step SOPs, parseable Python code 
 - **[`llm-observability`](./skills/llm-engineering/llm-observability/SKILL.md)**: OpenTelemetry GenAI & OpenInference tracing, token/cost tracking, latency profiling. Includes companion script in [`scripts/telemetry_engine.py`](./skills/llm-engineering/llm-observability/scripts/telemetry_engine.py).
 
 ### ✍️ 7. Human Writing, Research & Knowledge Capture ([`skills/writing-and-research/`](./skills/writing-and-research/))
-- **[`human-writer`](./skills/writing-and-research/human-writer/SKILL.md)**: Removes AI writing tells and de-slops synthetic text using Wikipedia's 29-pattern framework. Features voice calibration and dual-pass recursive self-audits while preserving 100% semantic fidelity.
+- **[`humanizer`](./skills/writing-and-research/humanizer/SKILL.md)**: Programmatic, zero-AI text and code comment humanizer. Dismantles Turnitin Winnowing n-gram hashes, purges zero-width Unicode tracking markers, and elevates burstiness/perplexity without altering equations or code logic.
 - **[`workspace-researcher`](./skills/writing-and-research/workspace-researcher/SKILL.md)**: High-signal web crawling, documentation indexing, and citation-backed synthesis briefs.
 - **[`knowledge-capture`](./skills/writing-and-research/knowledge-capture/SKILL.md)**: Extracting structured decisions, action items, and documentation from transcripts and chats.
 - **[`office-doc-engine`](./skills/writing-and-research/office-doc-engine/SKILL.md)**: Programmatic creation and parsing of Word (.docx), Excel (.xlsx), PowerPoint (.pptx), and PDF files.

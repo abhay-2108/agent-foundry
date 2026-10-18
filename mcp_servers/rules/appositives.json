@@ -1,0 +1,17 @@
+{
+  "finite difference": "a numerical discretization technique for differential equations",
+  "crank-nicolson": "an implicit second-order numerically stable scheme",
+  "boundary condition": "a physical constraint imposed on the solution manifold",
+  "convergence": "the asymptotic tendency of a sequence toward its limit",
+  "stability": "the property guaranteeing bounded error propagation",
+  "truncation error": "the residual discrepancy between continuous and discrete operators",
+  "eigenvalue": "a characteristic scalar of a linear transformation",
+  "discretization": "the process of projecting continuous equations onto discrete grids",
+  "gradient descent": "a first-order iterative optimization algorithm",
+  "loss function": "an objective metric quantifying model estimation discrepancy",
+  "cross-validation": "a resampling protocol assessing model generalization bounds",
+  "hyperparameter": "an external configuration variable tuned outside model optimization",
+  "regularization": "a penalty term constraining model parameter complexity",
+  "latent space": "a compressed low-dimensional manifold representation",
+  "attention mechanism": "a dynamically weighted contextual aggregation layer"
+}

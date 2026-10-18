@@ -37,6 +37,7 @@ from workflows.workflow_engine import WorkflowEngine
 from mcp_servers.code_sandbox_server import execute_python_code, run_shell_command
 from mcp_servers.filesystem_server import SafeFilesystem
 from mcp_servers.hybrid_retriever_server import HybridSearchEngine
+from mcp_servers.turnitout_engine import TurnitoutEngine
 
 # MCP SDK import with cross-version fallback
 try:
@@ -65,6 +66,7 @@ except Exception as e:
 workflow_engine = WorkflowEngine(workspace_root=REPO_ROOT)
 retriever_engine = HybridSearchEngine()
 fs_handler = SafeFilesystem(allowed_root=REPO_ROOT)
+turnitout_engine = TurnitoutEngine()
 
 
 # ======================================================================
@@ -444,6 +446,115 @@ def evaluate_risk(command_or_action: str) -> str:
 
 
 # ======================================================================
+# 6. Turnitout Humanizer & Evasion Tools
+# ======================================================================
+
+@mcp.tool()
+def turnitout_humanize_text(text: str, aggressiveness: float = 0.5) -> str:
+    """
+    100% programmatic, zero-AI text humanizer that defeats similarity and AI detection
+    (Turnitin, iThenticate, GPTZero, CopyLeaks, ZeroGPT) without using LLMs.
+    Applies 17-stage transformation: Winnowing n-gram disruption, active/passive voice swaps,
+    asymmetric burstiness (sentence fusion/splitting), rare academic synonym substitution,
+    appositive injection, hedge adverbs, and zero-width watermark purging.
+    """
+    res = turnitout_engine.process_text(text, aggressiveness=aggressiveness)
+    return json.dumps(res, indent=2)
+
+
+@mcp.tool()
+def turnitout_humanize_code(code: str, language: str = "python", persona: str = "intermediate") -> str:
+    """
+    Humanizes source code comments and docstrings across 10+ programming languages
+    (Python, JS/TS, C/C++, Java, Go, Rust, SQL, Bash) without modifying any executable code,
+    syntax, indentation, or logic. Selectable developer persona: 'beginner', 'intermediate', or 'senior'.
+    """
+    res = turnitout_engine.process_code(code, language=language, persona=persona)
+    return json.dumps(res, indent=2)
+
+
+@mcp.tool()
+def turnitout_purge_watermarks(text: str) -> str:
+    """
+    Deep-cleans invisible zero-width Unicode tracking characters (U+200B, U+200C, U+200D, U+2060, U+FEFF),
+    purges embedded C2PA manifests, normalizes AI-signature em-dashes, and cleans stereotypical LLM cliches.
+    """
+    cleaned, scrub_info = turnitout_engine.scrubber.scrub(text)
+    return json.dumps({
+        "status": "SUCCESS",
+        "purged_text": cleaned,
+        "telemetry": scrub_info
+    }, indent=2)
+
+
+@mcp.tool()
+def turnitout_analyze_footprint(text: str) -> str:
+    """
+    Analyzes document AI and similarity footprint using ZipPy entropic compression perplexity,
+    sentence length burstiness variation (CoV), Winnowing hash collision simulation, and zero-width detection.
+    Returns quantitative metrics and overall risk rating ('LOW', 'MEDIUM', 'HIGH').
+    """
+    metrics = turnitout_engine.analyzer.calculate_metrics(text)
+    return json.dumps({
+        "status": "SUCCESS",
+        "metrics": metrics
+    }, indent=2)
+
+
+@mcp.tool()
+def turnitout_process_file(file_path: str, output_path: str = "", aggressiveness: float = 0.5, persona: str = "intermediate") -> str:
+    """
+    Reads a local text, markdown, LaTeX (.tex), or source code file, runs appropriate Turnitout
+    humanization, and optionally writes output to output_path (or returns transformed content).
+    """
+    p = Path(file_path).resolve()
+    if not p.exists() or not p.is_file():
+        return json.dumps({"status": "ERROR", "error": f"File not found: {file_path}"})
+
+    try:
+        content = p.read_text(encoding="utf-8", errors="replace")
+        ext = p.suffix.lower()
+
+        code_exts = {
+            ".py": "python", ".js": "javascript", ".ts": "typescript",
+            ".cpp": "cpp", ".c": "c", ".java": "java", ".cs": "csharp",
+            ".go": "go", ".rs": "rust", ".sql": "sql", ".sh": "bash"
+        }
+
+        if ext in code_exts:
+            res = turnitout_engine.process_code(content, language=code_exts[ext], persona=persona)
+            out_content = res["code"]
+            stats = {"type": "code", "comments_humanized": res["comments_humanized"]}
+        else:
+            res = turnitout_engine.process_text(content, aggressiveness=aggressiveness)
+            out_content = res["humanized_text"]
+            stats = {
+                "type": "document",
+                "total_transforms": res["total_transforms"],
+                "risk_before": res["metrics_before"]["risk_rating"],
+                "risk_after": res["metrics_after"]["risk_rating"]
+            }
+
+        if output_path:
+            out_p = Path(output_path).resolve()
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_text(out_content, encoding="utf-8")
+            written_to = str(out_p)
+        else:
+            written_to = None
+
+        return json.dumps({
+            "status": "SUCCESS",
+            "file": str(p),
+            "written_to": written_to,
+            "stats": stats,
+            "preview": out_content[:1000] if not written_to else None
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "ERROR", "error": str(e)})
+
+
+# ======================================================================
 # Server Runner & Self-Test
 # ======================================================================
 
@@ -492,6 +603,16 @@ def run_self_test() -> int:
     assert risk_res["risk_level"] == "critical"
     assert risk_res["requires_human_approval"] is True
     print(f"     [OK] evaluate_risk passed ({risk_res['risk_level']}).")
+
+    # 6. Turnitout humanizer test
+    print("  -> Testing Turnitout humanizer & watermark scrubbing tools...")
+    h_res = json.loads(turnitout_humanize_text("In this study, we analyzed the method by means of extensive simulations."))
+    assert h_res["status"] == "SUCCESS"
+    assert h_res["total_transforms"] > 0
+    p_res = json.loads(turnitout_purge_watermarks("AI\u200b text — delves into"))
+    assert p_res["status"] == "SUCCESS"
+    assert p_res["telemetry"]["zero_width_purged"] == 1
+    print("     [OK] Turnitout tools passed.")
 
     print("\n[+] ALL AGENT FOUNDRY FASTMCP TESTS PASSED SUCCESSFULLY!")
     return 0

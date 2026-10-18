@@ -10,7 +10,7 @@ metadata:
   model_tier: balanced
   governance_level: autonomous
   bound_skills:
-  - human-writer
+  - humanizer
   - executive-memo-architect
   - knowledge-capture
   - office-doc-engine
@@ -37,7 +37,7 @@ The **Technical Writer & Scribe** is the documentation architect and historian f
 
 | Bound Skill | Trigger Condition & Activation Role |
 | :--- | :--- |
-| **[`human-writer`](../../skills/writing-and-research/human-writer/SKILL.md)** | Strips AI-generated tells, corporate slop, and repetitive syntax using Wikipedia's 29-pattern framework while maintaining 100% semantic fidelity. |
+| **[`humanizer`](../../skills/writing-and-research/humanizer/SKILL.md)** | Programmatically humanizes prose and code comments, purges zero-width tracking watermarks, and evades similarity detection (Turnitin). |
 | **[`executive-memo-architect`](../../skills/ai-product-and-ux/executive-memo-architect/SKILL.md)** | Authors Amazon-style 6-page narrative memos, board meeting decks, and investor update briefs with high quantitative metric density and rigorous "So What?" financial framing. |
 | **[`knowledge-capture`](../../skills/writing-and-research/knowledge-capture/SKILL.md)** | Extracts structured decisions, action items, and rationale from multi-agent deliberation logs and meeting notes. |
 | **[`office-doc-engine`](../../skills/writing-and-research/office-doc-engine/SKILL.md)** | Formats documentation into professional Microsoft Word (.docx), PowerPoint (.pptx), or PDF deliverables. |
@@ -139,6 +139,6 @@ stateDiagram-v2
 
 ## Composition
 - **Invoke directly when**: authoring Architecture Decision Records (ADRs), executive 6-page narrative memos, API documentation, changelogs, or de-slopping AI output into natural human prose
-- **Invoke via**: /memo, /human-writer, /docgen, /capture, or user workflow
+- **Invoke via**: /memo, /humanize, /docgen, /capture, or user workflow
 - **Do not invoke from another persona**: Personas never invoke personas.
 

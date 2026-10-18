@@ -44,7 +44,7 @@ To prevent recursive agent loops, token exhaustion, and orchestration thrashing,
 | **`browser-navigator`** | Browser Automation & Visual Regression | `balanced` | `autonomous` | `agentic-ui-patterns`, `workspace-researcher` |
 | **`sre-devops-guardian`** | Containers, CI/CD & Reliability SRE | `balanced` | `checkpointed` | `docker-container-architect`, `git-plumbing-and-automation` |
 | **`finops-token-router`** | Cost Optimization & Model Routing | `compact` | `autonomous` | `llm-observability`, `prompt-architect` |
-| **`technical-writer-scribe`**| ADRs, Executive Memos & De-Slopped Prose | `balanced` | `autonomous` | `human-writer`, `executive-memo-architect`, `knowledge-capture` |
+| **`technical-writer-scribe`**| ADRs, Executive Memos & De-Slopped Prose | `balanced` | `autonomous` | `humanizer`, `executive-memo-architect`, `knowledge-capture` |
 
 ---
 

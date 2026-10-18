@@ -1,0 +1,62 @@
+{
+  "the": [
+    "this",
+    "that",
+    "the respective",
+    "the given",
+    "the aforesaid",
+    "such"
+  ],
+  "this": [
+    "the",
+    "the present",
+    "the current",
+    "such a",
+    "this particular"
+  ],
+  "these": [
+    "such",
+    "the aforementioned",
+    "the present",
+    "these particular"
+  ],
+  "those": [
+    "such",
+    "the respective",
+    "the aforesaid",
+    "the specified"
+  ],
+  "each": [
+    "every individual",
+    "every single",
+    "each respective"
+  ],
+  "every": [
+    "each and every",
+    "all given",
+    "each respective"
+  ],
+  "some": [
+    "a subset of",
+    "certain",
+    "a handful of",
+    "particular"
+  ],
+  "many": [
+    "numerous",
+    "a multiplicity of",
+    "diverse",
+    "copious"
+  ],
+  "several": [
+    "a manifold set of",
+    "a number of",
+    "various",
+    "multiple"
+  ],
+  "all": [
+    "the entirety of",
+    "every single",
+    "the complete body of"
+  ]
+}

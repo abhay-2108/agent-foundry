@@ -50,7 +50,7 @@ Each skill resides in its own dedicated directory containing a standardized `SKI
 - **[`llm-observability`](./llm-engineering/llm-observability/SKILL.md)**: Vendor-neutral OpenTelemetry GenAI & OpenInference tracing, token/cost tracking, latency profiling.
 
 ### ✍️ 7. Human Writing, Research & Knowledge Capture ([`writing-and-research/`](./writing-and-research/))
-- **[`human-writer`](./writing-and-research/human-writer/SKILL.md)**: Removes AI writing tells and de-slops synthetic text using Wikipedia's 29-pattern framework. Features voice calibration and dual-pass recursive self-audits while preserving 100% semantic fidelity.
+- **[`humanizer`](./writing-and-research/humanizer/SKILL.md)**: Programmatic, zero-AI text and code comment humanizer. Dismantles Turnitin Winnowing n-gram hashes, purges zero-width Unicode tracking markers, and elevates burstiness/perplexity without altering equations or code logic.
 - **[`workspace-researcher`](./writing-and-research/workspace-researcher/SKILL.md)**: High-signal web crawling, documentation indexing, and citation-backed synthesis briefs.
 - **[`knowledge-capture`](./writing-and-research/knowledge-capture/SKILL.md)**: Extracting structured decisions, action items, and documentation from transcripts and chats.
 - **[`office-doc-engine`](./writing-and-research/office-doc-engine/SKILL.md)**: Programmatic creation and parsing of Word (.docx), Excel (.xlsx), PowerPoint (.pptx), and PDF files.

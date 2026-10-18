@@ -21,7 +21,7 @@ Authors, refines, and optimizes structured system prompts, few-shot templates, a
 - Trigger phrases: `"write a system prompt"`, `"prompt engineering"`, `"structured output"`, `"Pydantic JSON schema"`, `"fix prompt"`.
 
 ---
-- **When NOT to use**: Creative copywriting or persuasive human marketing prose (use `human-writer`).
+- **When NOT to use**: Creative copywriting or humanizing text to bypass AI detection (use `humanizer`).
 
 ## Core Process & Prompt Engineering Patterns
 

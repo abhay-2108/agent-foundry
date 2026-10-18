@@ -1,0 +1,98 @@
+{
+  "zero_width_chars": [
+    "\u200b",
+    "\u200c",
+    "\u200d",
+    "\u2060",
+    "\ufeff",
+    "\u200e",
+    "\u200f",
+    "\u202a",
+    "\u202b",
+    "\u202c",
+    "\u202d",
+    "\u202e"
+  ],
+  "cliches": [
+    [
+      "\\bdelve into\\b",
+      "examine"
+    ],
+    [
+      "\\bdelves into\\b",
+      "examines"
+    ],
+    [
+      "\\bdelved into\\b",
+      "examined"
+    ],
+    [
+      "\\bdelving into\\b",
+      "examining"
+    ],
+    [
+      "\\bpivotal role\\b",
+      "significant part"
+    ],
+    [
+      "\\ba testament to\\b",
+      "clear evidence of"
+    ],
+    [
+      "\\bbeacon of\\b",
+      "source of"
+    ],
+    [
+      "\\bever-evolving landscape\\b",
+      "changing environment"
+    ],
+    [
+      "\\bin the realm of\\b",
+      "in"
+    ],
+    [
+      "\\bit is crucial to\\b",
+      "we must"
+    ],
+    [
+      "\\bit is imperative that\\b",
+      "we need to"
+    ],
+    [
+      "\\bunleash the power of\\b",
+      "utilize"
+    ],
+    [
+      "\\btapestry of\\b",
+      "collection of"
+    ],
+    [
+      "\\bintertwined with\\b",
+      "connected to"
+    ],
+    [
+      "\\bgame-changer\\b",
+      "major advancement"
+    ],
+    [
+      "\\bharnessing the potential\\b",
+      "using the capability"
+    ],
+    [
+      "\\bseamless integration\\b",
+      "integration"
+    ],
+    [
+      "\\brobust framework\\b",
+      "system"
+    ],
+    [
+      "\\bfoster an environment\\b",
+      "encourage"
+    ],
+    [
+      "\\bplethora of\\b",
+      "abundance of"
+    ]
+  ]
+}
