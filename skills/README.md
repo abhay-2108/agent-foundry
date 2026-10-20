@@ -42,6 +42,7 @@ Each skill resides in its own dedicated directory containing a standardized `SKI
 - **[`agentic-rag-engineer`](./rag-and-knowledge/agentic-rag-engineer/SKILL.md)**: Hybrid search (dense + BM25), semantic chunking, cross-encoder re-ranking, and Self-RAG/CRAG.
 - **[`graph-rag-builder`](./rag-and-knowledge/graph-rag-builder/SKILL.md)**: Entity/triplet extraction, graph construction, and multi-hop relational reasoning.
 - **[`agent-memory-architect`](./rag-and-knowledge/agent-memory-architect/SKILL.md)**: Tiered memory architecture (Working, Episodic, Semantic) with vector stores.
+- **[`graphify`](./rag-and-knowledge/graphify/SKILL.md)**: AST-backed knowledge graph extraction for codebases, documents, schemas, and media. Generates interactive HTML, GraphRAG JSON, and community reports with zero vector-store overhead.
 - **[`mcp-tool-integrator`](./rag-and-knowledge/mcp-tool-integrator/SKILL.md)**: Building Model Context Protocol (MCP) servers, bulletproof schemas (Zod/Pydantic), and tool error handling.
 
 ### 📡 6. LLM Engineering, Evals & Observability ([`llm-engineering/`](./llm-engineering/))
