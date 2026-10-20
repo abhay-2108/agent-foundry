@@ -33,6 +33,7 @@ htmlcov/
 scratch/
 tmp/
 *.tmp
+graphify-out/
 
 # Node / Web Dependency Artifacts
 node_modules/
